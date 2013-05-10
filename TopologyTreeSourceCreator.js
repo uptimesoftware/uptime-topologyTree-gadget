@@ -1,13 +1,26 @@
-TopologyTreeSourceCreator = function() {
+TopologyTreeSourceCreator = function(options) {
 	var uptime_api = new uptimeApi();
 	var availableElementsForTree = {};
 	var treeRenderingFunction;
+	var showFullTree=false;
+	
+	if (typeof options == "object") {
+		if (typeof options.showFullTree == "boolean") {
+			showFullTree = options.showFullTree;
+		}
+	}
 
 	this.getSource = function(successCallback, errorCallback) {
 
 		treeRenderingFunction = successCallback;
 		uptime_api.getElements("", pushIntoElementArray, errorCallback);
 	}
+	
+	this.rebuildTreeWithCachedResults = function(shouldShowFullTree, successCallback){
+		showFullTree = shouldShowFullTree;
+		treeRenderingFunction = successCallback;
+		buildTreeInMemory();
+	};
 
 	var pushIntoElementArray = function(elements) {
 		numElements = elements.length - 1;
@@ -83,7 +96,7 @@ TopologyTreeSourceCreator = function() {
 				elementsOnTree[childNode.entityId] = childNode;
 				root.dependents.push(childNode);
 			}
-			if (currentNode.status != "OK") {
+			if (currentNode.status != "OK" || showFullTree) {
 				createBranch(availableElementsForTree, elementsOnTree, currentNode, root);
 			}
 		});
