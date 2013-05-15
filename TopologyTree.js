@@ -53,6 +53,7 @@ TopologyTree = function(options) {
 		root.y0 = 10;
 		$("#inProgressBar").hide();
 		$("#showEntireTreeContainer").show();
+		$("#selectTopLevelParentContainer").show();
 		topologyTreeInstance.updateTree(root);
 
 		toolTip = vis.append("svg:text").style("opacity", 1e-6);

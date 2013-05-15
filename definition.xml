@@ -9,14 +9,16 @@
 		<head>
 		<title>Topological Failure Tree</title>
 		#includeResources(jquery,d3)
+		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" type="text/css" rel="stylesheet" />
 		<link href="__UPTIME_GADGET_BASE__/topology.css" type="text/css" rel="stylesheet" />
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/uptimeApi.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTree.js"></script>
+		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
 		</head>
 	<body>
-	<div style="float:right; display:none" id="showEntireTreeContainer"><input type=checkbox name="showEntireTree"><span>Show Full Topology</span>
-	</div>
+	<div style="float:right; display:none" id="showEntireTreeContainer"><input type=checkbox name="showEntireTree"><span>Show Full Topology</span></div>
+	<div style="float:right; width:500px; display:none" id="selectTopLevelParentContainer"><select data-placeholder="Select root elements to display" style="width:500px" multiple="true" id="selectTopLevelParent"></select></div>
 	<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif"></img></div>
 	<div id="error"></div>
 	<div style="position: fixed" id="tooltip" class="systemTooltip"> </div>
@@ -39,7 +41,9 @@
 		
 	});
 	
-	var sourceBuilder = new TopologyTreeSourceCreator({showFullTree:false});
+	//uptimeGadget.registerOnEditHandler(popupSelectParents);
+	
+	var sourceBuilder = new TopologyTreeSourceCreator();
 	sourceBuilder.getSource(buildTree,displayError);
 
 	function displayError(source){
@@ -51,7 +55,7 @@
 	}
 	
 	$('input[type="checkbox"][name="showEntireTree"]').change(function() {
-		sourceBuilder.rebuildTreeWithCachedResults(this.checked, buildTree);
+		sourceBuilder.rebuildTreeWithCachedResults();
 	     
  	});
 
