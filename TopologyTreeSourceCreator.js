@@ -1,7 +1,7 @@
 TopologyTreeSourceCreator = function(options) {
 	var uptime_api = new uptimeApi();
 	var availableElementsForTree = {};
-	var defaultRootNodes = [];
+	var initialRootNodes = [];
 	var treeRenderingFunction;
 	if (typeof options == "object") {
 	}
@@ -33,17 +33,35 @@ TopologyTreeSourceCreator = function(options) {
 				availableElementsForTree[elementNode.id] = elementNode;
 			}
 		});
-		$.when.apply($, allStatusTasks).done(buildTreeWithServerResults);
+
+		$.when.apply($, allStatusTasks).done(loadUserSettings);
 	};
 	
-	var buildTreeWithServerResults = function(){
-
+	var loadUserSettings = function(){
+		uptimeGadget.loadSettings(buildTreeWithServerResults);
+	};
+	
+	var buildTreeWithServerResults = function(userSettings){
+		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
 		populateTopLevelParentSelect();
 		buildTreeWithDefaultRootsInMemory();
 	};
 	
+	var getInitialRootNodes = function(userRoots){
+		if (userRoots != null){
+			return userRoots;
+		}
+		var defaultRoot = [];
+		$.each(availableElementsForTree, function (i, element){
+			if (hasNoParents(element)){
+				defaultRoot.push(element.id);
+			}
+		});
+		return defaultRoot;
+	};
+	
 	var buildTreeWithDefaultRootsInMemory = function(){
-		buildTreeInMemory(defaultRootNodes);
+		buildTreeInMemory(initialRootNodes);
 	};
 	
 	var statusInfoCallback =  function(elementNode, statusInfo) {
@@ -51,9 +69,6 @@ TopologyTreeSourceCreator = function(options) {
 		elementNode.parents = statusInfo.parentsStatus;
 		elementNode.monitorStatus = statusInfo.monitorStatuses;
 		elementNode.message = statusInfo.message;
-		if (hasNoParents(elementNode)){
-			defaultRootNodes.push(elementNode.id);
-		}
 		elementNode.statusTask.resolve();
 	};
 
@@ -97,6 +112,7 @@ TopologyTreeSourceCreator = function(options) {
 		return root;
 	};
 
+
 	var buildTreeInMemory = function(rootNodes) {
 		var elementsOnTree = {};
 		var root = createRoot();
@@ -122,25 +138,38 @@ TopologyTreeSourceCreator = function(options) {
 	var populateTopLevelParentSelect = function (){
 		var parents = getNodesWithChildren();
 		$.each(parents, function(i, parent){
-			$("#selectTopLevelParent").append("<option value=" + parent.id + ">" + parent.name + "</option>");
+
+			$("#selectTopLevelParent").append("<option value=" + parent.id + " " + shouldBeSelected(parent) + ">" + parent.name + "</option>");
 		});
 		var chosen=$("#selectTopLevelParent").chosen();
 		chosen.change(updateRootNodes);
 	};
 	
-	var updateRootNodes = function(event){
-		var rootNodes = $("#selectTopLevelParent").val();
-		if (rootNodes==null){
-			buildTreeWithDefaultRootsInMemory();
-			return;
+	var shouldBeSelected = function(parent){
+		if (isCurrentNodeRootNode(parent, initialRootNodes)){
+			return "selected='selected'";
 		}
+		return "";
+	}
+	
+	var updateRootNodes = function(event){
+		var rootNodes = getUserSelectedRootNodes();
 		var rootNodesAsInt = [];
 		$.each(rootNodes, function(i, rootNode){
 			rootNodesAsInt.push(parseInt(rootNode));
 		});
 		buildTreeInMemory(rootNodesAsInt);
+		var userSettings = new UserSettings();
+		userSettings.syncSettingsToBackend(rootNodesAsInt, false);
 	};
 
+	var getUserSelectedRootNodes = function(){
+		var rootNodes = $("#selectTopLevelParent").val();
+		if (rootNodes==null){
+			return [];
+		}
+		return rootNodes;
+	};
 
 	var getNodesWithChildren = function(){
 		var eligibleParents = {};
@@ -180,7 +209,7 @@ TopologyTreeSourceCreator = function(options) {
 		});
 
 		return childNode;
-	}
+	};
 
 	var buildInvisibleParentNode = function(node, elementsOnTree, root) {
 		if (typeof elementsOnTree[node.id] != "undefined") {
