@@ -43,12 +43,13 @@ TopologyTreeSourceCreator = function(options) {
 	
 	var buildTreeWithServerResults = function(userSettings){
 		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
+		$('input[type="checkbox"][name="showEntireTree"]').attr('checked', userSettings.showFullTree);
 		populateTopLevelParentSelect();
 		buildTreeWithDefaultRootsInMemory();
 	};
 	
 	var getInitialRootNodes = function(userRoots){
-		if (userRoots != null){
+		if (userRoots.length != 0){
 			return userRoots;
 		}
 		var defaultRoot = [];
@@ -150,8 +151,8 @@ TopologyTreeSourceCreator = function(options) {
 			return "selected='selected'";
 		}
 		return "";
-	}
-	
+	};
+	 
 	var updateRootNodes = function(event){
 		var rootNodes = getUserSelectedRootNodes();
 		var rootNodesAsInt = [];
@@ -160,7 +161,17 @@ TopologyTreeSourceCreator = function(options) {
 		});
 		buildTreeInMemory(rootNodesAsInt);
 		var userSettings = new UserSettings();
-		userSettings.syncSettingsToBackend(rootNodesAsInt, false);
+		var showFullTree = $('input[type="checkbox"][name="showEntireTree"]').is(':checked');
+		var settings = {rootNodes:rootNodesAsInt, showFullTree:showFullTree};
+ 		uptimeGadget.saveSettings(settings, onGoodSave, onBadAjax);
+	};
+	
+	var onGoodSave = function(){
+		
+	};
+	
+	var onBadAjax = function(){
+		
 	};
 
 	var getUserSelectedRootNodes = function(){
