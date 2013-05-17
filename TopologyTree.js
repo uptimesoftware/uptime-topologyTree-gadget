@@ -54,6 +54,9 @@ TopologyTree = function(options) {
 		$("#inProgressBar").hide();
 		$("#showEntireTreeContainer").show();
 		$("#selectTopLevelParentContainer").show();
+		if (!uptimeGadget.isOwner()){
+			disableTreeControls();
+		}
 		topologyTreeInstance.updateTree(root);
 
 		toolTip = vis.append("svg:text").style("opacity", 1e-6);
@@ -89,14 +92,26 @@ TopologyTree = function(options) {
 
 	};
 
-	this.displayError = function() {
+	this.displayError = function(message) {
 		$("#topoTree").hide();
 		$("#tooltip").hide();
 		$("#error").text("Error loading topological failure tree.").show();
 	};
+	
+	var disableTreeControls = function(){
+		$("#showEntireTreeCheckbox").prop('disabled', true);
+		$("#selectTopLevelParent").prop('disabled', true);
+		$.each($("#selectTopLevelParent > option"), function(i, option){
+			$(option).prop('disabled', true);
+		});
+		$("#selectTopLevelParent").trigger("liszt:updated");
+	};
 
 	var getFillColour = function(d) {
 		var entityStatus = d.entityStatus;
+		if (d.entityId==0){
+			return  "black";
+		}
 		if (entityStatus == "OK") {
 			return "lawngreen";
 		}

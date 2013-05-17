@@ -3,11 +3,12 @@ TopologyTreeSourceCreator = function(options) {
 	var availableElementsForTree = {};
 	var initialRootNodes = [];
 	var treeRenderingFunction;
+	var errorCallback;
 	if (typeof options == "object") {
 	}
 
 	this.getSource = function(successCallback, errorCallback) {
-
+		errorCallback = errorCallback;
 		treeRenderingFunction = successCallback;
 		uptime_api.getElements("", pushIntoElementArray, errorCallback);
 	};
@@ -38,10 +39,13 @@ TopologyTreeSourceCreator = function(options) {
 	};
 	
 	var loadUserSettings = function(){
-		uptimeGadget.loadSettings(buildTreeWithServerResults);
+		uptimeGadget.loadSettings(buildTreeWithServerResults, errorCallback);
 	};
 	
 	var buildTreeWithServerResults = function(userSettings){
+		if (userSettings==null){
+			userSettings = {rootNodes: [], showFullTree: false};
+		}
 		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
 		$('input[type="checkbox"][name="showEntireTree"]').attr('checked', userSettings.showFullTree);
 		populateTopLevelParentSelect();
@@ -104,7 +108,7 @@ TopologyTreeSourceCreator = function(options) {
 	var createRoot = function() {
 		var root = new Object();
 		root.entityId = 0;
-		root.entityName = "My Infrastructure";
+		root.entityName = "up.time";
 		root.dependents = new Array();
 		root.entityStatus = "OK";
 		root.type = "Invisible";

@@ -18,7 +18,7 @@
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
 		</head>
 	<body>
-	<div style="float:right; display:none" id="showEntireTreeContainer"><input type=checkbox name="showEntireTree"><span>Show Full Topology</span></div>
+	<div style="float:right; display:none" id="showEntireTreeContainer"><input type=checkbox id="showEntireTreeCheckbox" name="showEntireTree"><span>Show Full Topology</span></div>
 	<div style="float:right; width:500px; display:none" id="selectTopLevelParentContainer"><select data-placeholder="Select root elements to display" style="width:500px" multiple="true" id="selectTopLevelParent"></select></div>
 	<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif"></img></div>
 	<div id="error"></div>
@@ -41,9 +41,7 @@
 		topologyTree.resize(dimensions);
 		
 	});
-	
-	//uptimeGadget.registerOnEditHandler(popupSelectParents);
-	
+		
 	var sourceBuilder = new TopologyTreeSourceCreator();
 	sourceBuilder.getSource(buildTree,displayError);
 
