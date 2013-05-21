@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Module>
-	<ModulePrefs title="Topological Failure Tree"
-		description="Visualization for the failing elements in up.time Topology Trees."
+	<ModulePrefs title="Topology Tree"
+		description="Visualization for the up.time Topology Tree."
 		thumbnail="thumbs.png" />
 	<Content type="html">
 <![CDATA[
