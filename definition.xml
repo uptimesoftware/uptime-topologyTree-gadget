@@ -14,7 +14,6 @@
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/uptimeApi.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTree.js"></script>
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/UserSettings.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
 		</head>
 	<body>
