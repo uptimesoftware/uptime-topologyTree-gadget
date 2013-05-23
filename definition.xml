@@ -12,7 +12,6 @@
 		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" type="text/css" rel="stylesheet" />
 		<link href="__UPTIME_GADGET_BASE__/topology.css" type="text/css" rel="stylesheet" />
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/uptimeApi.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeBuilder.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>

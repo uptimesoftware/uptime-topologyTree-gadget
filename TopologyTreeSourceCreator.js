@@ -1,5 +1,4 @@
 TopologyTreeSourceCreator = function() {
-	var uptime_api = new uptimeApi();
 	var availableElementsForTree = {};
 	var initialRootNodes = [];
 	var treeRenderingFunction;
@@ -54,7 +53,11 @@ TopologyTreeSourceCreator = function() {
 	this.getSource = function(successCallback, errCallback) {
 		errorCallback = errCallback;
 		treeRenderingFunction = successCallback;
-		uptime_api.getElements("", pushIntoElementArray, errorCallback);
+		$.ajax("/api/v1/elements", {
+			cache : false
+		}).done(function(data, textStatus, jqXHR) {
+			pushIntoElementArray(data);
+		});
 	};
 
 	this.rebuildTreeWithCachedResults = function() {
@@ -95,13 +98,17 @@ TopologyTreeSourceCreator = function() {
 	};
 
 	var setupStatus = function(elementNode, handleElementStatus) {
-		uptime_api.getElementStatus(elementNode.id, function(elementStatus) {
+		$.ajax("/api/v1/elements/" + elementNode.id + "/status", {
+			cache : false
+		}).done(function(elementStatus, textStatus, jqXHR) {
 			var statusInfo = {};
 			statusInfo.message = elementStatus.message;
 			statusInfo.status = elementStatus.status;
 			statusInfo.parentsStatus = getAdditionalStatus(elementStatus.topologyParentStatus);
 			statusInfo.monitorStatuses = getAdditionalStatus(elementStatus.monitorStatus);
 			handleElementStatus(elementNode, statusInfo);
+		}).fail(function(jqXHR, textStatus, errorThrown) {
+			errorCallback(jqXHR, textStatus, errorThrown);
 		});
 	};
 
@@ -139,7 +146,6 @@ TopologyTreeSourceCreator = function() {
 		var root = createRoot();
 		var showFullTree = $('input[type="checkbox"][name="showEntireTree"]').is(':checked');
 		$.each(availableElementsForTree, function(i, currentNode) {
-
 			if (isCurrentNodeRootNode(currentNode, rootNodes)) {
 				var childNode = getNodeOnTree(elementsOnTree, currentNode);
 				elementsOnTree[childNode.entityId] = childNode;

@@ -308,6 +308,19 @@ TopologyTreeBuilder = function(options) {
 		}
 	};
 
+	var isCollide = function(node, node_sibling) {
+		var r = getStrokeWidthBasedOnChildren(node);
+		n1x1 = node.x - r, n1x2 = node.x + r;
+		n1y1 = node.y - r, n1y2 = node.y + r;
+		var r2 = getStrokeWidthBasedOnChildren(node_sibling);
+		n2x1 = node_sibling.x - r2, n2x2 = node_sibling.x + r2;
+		n2y1 = node_sibling.y - r2, n2y2 = node_sibling.y + r2;
+		result = ((n1x1 < n2x2 && n1x1 > n2x1) || (n1x2 > n2x2 && n1x2 < n2x1))
+				&& ((n1y1 <= n2y2 && n1y1 >= n2y1) || (n1y2 >= n2y2 && n1y2 <= n2y1));
+
+		return result;
+	};
+
 	var detectCollisions = function(nodes) {
 		nodes.forEach(function(d, index) {
 			d.isCollide = false;
@@ -324,19 +337,6 @@ TopologyTreeBuilder = function(options) {
 
 			}
 		});
-	};
-
-	var isCollide = function(node, node_sibling) {
-		var r = getStrokeWidthBasedOnChildren(node);
-		n1x1 = node.x - r, n1x2 = node.x + r;
-		n1y1 = node.y - r, n1y2 = node.y + r;
-		var r2 = getStrokeWidthBasedOnChildren(node_sibling);
-		n2x1 = node_sibling.x - r2, n2x2 = node_sibling.x + r2;
-		n2y1 = node_sibling.y - r2, n2y2 = node_sibling.y + r2;
-		result = ((n1x1 < n2x2 && n1x1 > n2x1) || (n1x2 > n2x2 && n1x2 < n2x1))
-				&& ((n1y1 <= n2y2 && n1y1 >= n2y1) || (n1y2 >= n2y2 && n1y2 <= n2y1));
-
-		return result;
 	};
 
 };
