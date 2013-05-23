@@ -7,13 +7,13 @@ TopologyTreeSourceCreator = function(options) {
 	if (typeof options == "object") {
 	}
 
-	this.getSource = function(successCallback, errorCallback) {
-		errorCallback = errorCallback;
+	this.getSource = function(successCallback, errCallback) {
+		errorCallback = errCallback;
 		treeRenderingFunction = successCallback;
 		uptime_api.getElements("", pushIntoElementArray, errorCallback);
 	};
-	
-	this.rebuildTreeWithCachedResults = function(){
+
+	this.rebuildTreeWithCachedResults = function() {
 		updateRootNodes();
 	};
 
@@ -37,39 +37,42 @@ TopologyTreeSourceCreator = function(options) {
 
 		$.when.apply($, allStatusTasks).done(loadUserSettings);
 	};
-	
-	var loadUserSettings = function(){
+
+	var loadUserSettings = function() {
 		uptimeGadget.loadSettings(buildTreeWithServerResults, errorCallback);
 	};
-	
-	var buildTreeWithServerResults = function(userSettings){
-		if (userSettings==null){
-			userSettings = {rootNodes: [], showFullTree: false};
+
+	var buildTreeWithServerResults = function(userSettings) {
+		if (userSettings == null) {
+			userSettings = {
+				rootNodes : [],
+				showFullTree : false
+			};
 		}
 		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
 		$('input[type="checkbox"][name="showEntireTree"]').attr('checked', userSettings.showFullTree);
 		populateTopLevelParentSelect();
 		buildTreeWithDefaultRootsInMemory();
 	};
-	
-	var getInitialRootNodes = function(userRoots){
-		if (userRoots.length != 0){
+
+	var getInitialRootNodes = function(userRoots) {
+		if (userRoots.length != 0) {
 			return userRoots;
 		}
 		var defaultRoot = [];
-		$.each(availableElementsForTree, function (i, element){
-			if (hasNoParents(element)){
+		$.each(availableElementsForTree, function(i, element) {
+			if (hasNoParents(element)) {
 				defaultRoot.push(element.id);
 			}
 		});
 		return defaultRoot;
 	};
-	
-	var buildTreeWithDefaultRootsInMemory = function(){
+
+	var buildTreeWithDefaultRootsInMemory = function() {
 		buildTreeInMemory(initialRootNodes);
 	};
-	
-	var statusInfoCallback =  function(elementNode, statusInfo) {
+
+	var statusInfoCallback = function(elementNode, statusInfo) {
 		elementNode.status = statusInfo.status;
 		elementNode.parents = statusInfo.parentsStatus;
 		elementNode.monitorStatus = statusInfo.monitorStatuses;
@@ -117,13 +120,12 @@ TopologyTreeSourceCreator = function(options) {
 		return root;
 	};
 
-
 	var buildTreeInMemory = function(rootNodes) {
 		var elementsOnTree = {};
 		var root = createRoot();
 		var showFullTree = $('input[type="checkbox"][name="showEntireTree"]').is(':checked');
 		$.each(availableElementsForTree, function(i, currentNode) {
-			
+
 			if (isCurrentNodeRootNode(currentNode, rootNodes)) {
 				var childNode = getNodeOnTree(elementsOnTree, currentNode);
 				elementsOnTree[childNode.entityId] = childNode;
@@ -135,66 +137,69 @@ TopologyTreeSourceCreator = function(options) {
 		});
 		treeRenderingFunction(decompressTree(root));
 	};
-	
-	var isCurrentNodeRootNode = function (currentNode, rootNodes){
-		return $.inArray(currentNode.id, rootNodes)>-1;
-	};
-	
-	var populateTopLevelParentSelect = function (){
-		var parents = getNodesWithChildren();
-		$.each(parents, function(i, parent){
 
-			$("#selectTopLevelParent").append("<option value=" + parent.id + " " + shouldBeSelected(parent) + ">" + parent.name + "</option>");
+	var isCurrentNodeRootNode = function(currentNode, rootNodes) {
+		return $.inArray(currentNode.id, rootNodes) > -1;
+	};
+
+	var populateTopLevelParentSelect = function() {
+		var parents = getNodesWithChildren();
+		$.each(parents, function(i, parent) {
+
+			$("#selectTopLevelParent").append(
+					"<option value=" + parent.id + " " + shouldBeSelected(parent) + ">" + parent.name + "</option>");
 		});
-		var chosen=$("#selectTopLevelParent").chosen();
+		var chosen = $("#selectTopLevelParent").chosen();
 		chosen.change(updateRootNodes);
 	};
-	
-	var shouldBeSelected = function(parent){
-		if (isCurrentNodeRootNode(parent, initialRootNodes)){
+
+	var shouldBeSelected = function(parent) {
+		if (isCurrentNodeRootNode(parent, initialRootNodes)) {
 			return "selected='selected'";
 		}
 		return "";
 	};
-	 
-	var updateRootNodes = function(event){
+
+	var updateRootNodes = function(event) {
 		var rootNodes = getUserSelectedRootNodes();
 		var rootNodesAsInt = [];
-		$.each(rootNodes, function(i, rootNode){
+		$.each(rootNodes, function(i, rootNode) {
 			rootNodesAsInt.push(parseInt(rootNode));
 		});
 		buildTreeInMemory(rootNodesAsInt);
-		var userSettings = new UserSettings();
 		var showFullTree = $('input[type="checkbox"][name="showEntireTree"]').is(':checked');
-		var settings = {rootNodes:rootNodesAsInt, showFullTree:showFullTree};
- 		uptimeGadget.saveSettings(settings, onGoodSave, onBadAjax);
-	};
-	
-	var onGoodSave = function(){
-		
-	};
-	
-	var onBadAjax = function(){
-		
+		var settings = {
+			rootNodes : rootNodesAsInt,
+			showFullTree : showFullTree
+		};
+		uptimeGadget.saveSettings(settings, onGoodSave, onBadAjax);
 	};
 
-	var getUserSelectedRootNodes = function(){
+	var onGoodSave = function() {
+
+	};
+
+	var onBadAjax = function() {
+
+	};
+
+	var getUserSelectedRootNodes = function() {
 		var rootNodes = $("#selectTopLevelParent").val();
-		if (rootNodes==null){
+		if (rootNodes == null) {
 			return [];
 		}
 		return rootNodes;
 	};
 
-	var getNodesWithChildren = function(){
+	var getNodesWithChildren = function() {
 		var eligibleParents = {};
 		$.each(availableElementsForTree, function(i, currentNode) {
-			$.each(currentNode.parents, function (j, parent){
+			$.each(currentNode.parents, function(j, parent) {
 				eligibleParents[parent.name] = parent;
 			});
 		});
 		return eligibleParents;
-		
+
 	};
 
 	var decompressTree = function(source) {
