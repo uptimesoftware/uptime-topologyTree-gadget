@@ -1,20 +1,33 @@
-TopologyTreeSourceCreator = function(options) {
+TopologyTreeSourceCreator = function() {
 	var uptime_api = new uptimeApi();
 	var availableElementsForTree = {};
 	var initialRootNodes = [];
 	var treeRenderingFunction;
-	var errorCallback;
-	if (typeof options == "object") {
-	}
+	var errorCallback = null;
 
-	this.getSource = function(successCallback, errCallback) {
-		errorCallback = errCallback;
-		treeRenderingFunction = successCallback;
-		uptime_api.getElements("", pushIntoElementArray, errorCallback);
+	var buildTreeWithServerResults = function(userSettings) {
+		if (userSettings == null) {
+			userSettings = {
+				rootNodes : [],
+				showFullTree : false
+			};
+		}
+		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
+		$('input[type="checkbox"][name="showEntireTree"]').attr('checked', userSettings.showFullTree);
+		populateTopLevelParentSelect();
+		buildTreeWithDefaultRootsInMemory();
 	};
 
-	this.rebuildTreeWithCachedResults = function() {
-		updateRootNodes();
+	var loadUserSettings = function() {
+		uptimeGadget.loadSettings(buildTreeWithServerResults, errorCallback);
+	};
+
+	var statusInfoCallback = function(elementNode, statusInfo) {
+		elementNode.status = statusInfo.status;
+		elementNode.parents = statusInfo.parentsStatus;
+		elementNode.monitorStatus = statusInfo.monitorStatuses;
+		elementNode.message = statusInfo.message;
+		elementNode.statusTask.resolve();
 	};
 
 	var pushIntoElementArray = function(elements) {
@@ -38,21 +51,30 @@ TopologyTreeSourceCreator = function(options) {
 		$.when.apply($, allStatusTasks).done(loadUserSettings);
 	};
 
-	var loadUserSettings = function() {
-		uptimeGadget.loadSettings(buildTreeWithServerResults, errorCallback);
+	this.getSource = function(successCallback, errCallback) {
+		errorCallback = errCallback;
+		treeRenderingFunction = successCallback;
+		uptime_api.getElements("", pushIntoElementArray, errorCallback);
 	};
 
-	var buildTreeWithServerResults = function(userSettings) {
-		if (userSettings == null) {
-			userSettings = {
-				rootNodes : [],
-				showFullTree : false
-			};
-		}
-		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
-		$('input[type="checkbox"][name="showEntireTree"]').attr('checked', userSettings.showFullTree);
-		populateTopLevelParentSelect();
-		buildTreeWithDefaultRootsInMemory();
+	this.rebuildTreeWithCachedResults = function() {
+		updateRootNodes();
+	};
+
+	var createNodeOnTree = function(currentNode) {
+		var newNode = new Object();
+		newNode.entityId = currentNode.id;
+		newNode.entityName = currentNode.name;
+		newNode.entityStatus = currentNode.status;
+		newNode.statusMessage = currentNode.message;
+		newNode.monitorStatus = currentNode.monitorStatus;
+		newNode.type = currentNode.typeSubtypeName;
+		newNode.dependents = new Array();
+		return newNode;
+	};
+
+	var hasNoParents = function(node) {
+		return node.parents.length == 0;
 	};
 
 	var getInitialRootNodes = function(userRoots) {
@@ -72,14 +94,6 @@ TopologyTreeSourceCreator = function(options) {
 		buildTreeInMemory(initialRootNodes);
 	};
 
-	var statusInfoCallback = function(elementNode, statusInfo) {
-		elementNode.status = statusInfo.status;
-		elementNode.parents = statusInfo.parentsStatus;
-		elementNode.monitorStatus = statusInfo.monitorStatuses;
-		elementNode.message = statusInfo.message;
-		elementNode.statusTask.resolve();
-	};
-
 	var setupStatus = function(elementNode, handleElementStatus) {
 		uptime_api.getElementStatus(elementNode.id, function(elementStatus) {
 			var statusInfo = {};
@@ -89,7 +103,7 @@ TopologyTreeSourceCreator = function(options) {
 			statusInfo.monitorStatuses = getAdditionalStatus(elementStatus.monitorStatus);
 			handleElementStatus(elementNode, statusInfo);
 		});
-	}
+	};
 
 	var getAdditionalStatus = function(additionalStatus) {
 		// At least one Topological Parent, push parents into the element's
@@ -106,7 +120,7 @@ TopologyTreeSourceCreator = function(options) {
 			});
 		}
 		return additionalStatusArray;
-	}
+	};
 
 	var createRoot = function() {
 		var root = new Object();
@@ -172,15 +186,9 @@ TopologyTreeSourceCreator = function(options) {
 			rootNodes : rootNodesAsInt,
 			showFullTree : showFullTree
 		};
-		uptimeGadget.saveSettings(settings, onGoodSave, onBadAjax);
-	};
-
-	var onGoodSave = function() {
-
-	};
-
-	var onBadAjax = function() {
-
+		uptimeGadget.saveSettings(settings, function() {
+		}, function() {
+		});
 	};
 
 	var getUserSelectedRootNodes = function() {
@@ -199,12 +207,11 @@ TopologyTreeSourceCreator = function(options) {
 			});
 		});
 		return eligibleParents;
-
 	};
 
 	var decompressTree = function(source) {
 		return jQuery.extend(true, {}, source);
-	}
+	};
 
 	var createBranch = function(availableElementsForTree, elementsOnTree, node, root) {
 		var childNode = getNodeOnTree(elementsOnTree, node);
@@ -249,45 +256,28 @@ TopologyTreeSourceCreator = function(options) {
 		elementsOnTree[newNode.entityId] = newNode;
 		root.dependents.push(newNode);
 		return newNode;
-	}
+	};
 
 	var isParentNodeAvailableForTree = function(parentNode) {
 		return parentNode != null;
-	}
+	};
 
 	var isParentExist = function(parent) {
 		return typeof parent != "undefined";
-	}
+	};
 
 	var isAlreadyDependent = function(parent, child) {
 		var matchedElements = $.grep(parent.dependents, function(e) {
 			return e.entityId == child.entityId;
 		});
 		return matchedElements != 0;
-	}
+	};
 
 	var getNodeOnTree = function(elementsOnTree, currentNode) {
-
 		if (typeof elementsOnTree[currentNode.id] != "undefined") {
 			return elementsOnTree[currentNode.id];
 		}
 		return createNodeOnTree(currentNode);
-	}
+	};
 
-	var createNodeOnTree = function(currentNode) {
-		var newNode = new Object();
-		newNode.entityId = currentNode.id;
-		newNode.entityName = currentNode.name;
-		newNode.entityStatus = currentNode.status;
-		newNode.statusMessage = currentNode.message;
-		newNode.monitorStatus = currentNode.monitorStatus;
-		newNode.type = currentNode.typeSubtypeName;
-		newNode.dependents = new Array();
-		return newNode;
-	}
-
-	var hasNoParents = function(node) {
-		return node.parents.length == 0;
-	}
-
-}
+};

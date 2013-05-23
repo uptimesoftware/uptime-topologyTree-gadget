@@ -11,10 +11,11 @@
 		#includeResources(jquery,d3)
 		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" type="text/css" rel="stylesheet" />
 		<link href="__UPTIME_GADGET_BASE__/topology.css" type="text/css" rel="stylesheet" />
+		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/uptimeApi.js"></script>
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTree.js"></script>
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
+		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeBuilder.js"></script>
+		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>
 		</head>
 	<body>
 	<div style="float:right; display:none" id="showEntireTreeContainer"><input type=checkbox id="showEntireTreeCheckbox" name="showEntireTree"><span>Show Full Topology</span></div>
@@ -22,44 +23,6 @@
 	<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif"></img></div>
 	<div id="error"></div>
 	<div style="position: fixed" id="tooltip" class="systemTooltip"> </div>
-	<script type="text/javascript">
-	
-
-	
-	$(function() {
-
-	var topologyTree;
-	
-	uptimeGadget.registerOnLoadHandler(function(onLoadData) {
-            var  width= onLoadData.dimensions.width;
-			var height = onLoadData.dimensions.height;
-			topologyTree = new TopologyTree({height: height, width: width});
-	});
-
-	uptimeGadget.registerOnResizeHandler(function(dimensions) {
-		topologyTree.resize(dimensions);
-		
-	});
-		
-	var sourceBuilder = new TopologyTreeSourceCreator();
-	sourceBuilder.getSource(buildTree,displayError);
-
-	function displayError(source){
-		topologyTree.displayError();
-	}
-	
-	function buildTree(source){
-		topologyTree.buildTree(source);
-	}
-	
-	$('input[type="checkbox"][name="showEntireTree"]').change(function() {
-		sourceBuilder.rebuildTreeWithCachedResults();
-	     
- 	});
- 	
-	
-});
-</script>
 </body>
 </html>
 
