@@ -17,8 +17,8 @@
 		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>
 		</head>
 	<body>
-	<div style="float:right; display:none" id="showEntireTreeContainer"><input type=checkbox id="showEntireTreeCheckbox" name="showEntireTree"><span>Show Full Topology</span></div>
-	<div style="float:right; width:500px; display:none" id="selectTopLevelParentContainer"><select data-placeholder="Select root elements to display" style="width:500px" multiple="true" id="selectTopLevelParent"></select></div>
+	<div id="showEntireTreeContainer"><input type=checkbox id="showEntireTreeCheckbox" name="showEntireTree"><label for="showEntireTreeCheckbox">Show Full Topology</label></div>
+	<div id="selectTopLevelParentContainer"><select data-placeholder="Select root elements to display" multiple="true" id="selectTopLevelParent"></select></div>
 	<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif"></img></div>
 	<div id="error"></div>
 	<div style="position: fixed" id="tooltip" class="systemTooltip"> </div>

@@ -3,6 +3,7 @@ TopologyTreeSourceCreator = function() {
 	var initialRootNodes = [];
 	var treeRenderingFunction;
 	var errorCallback = null;
+	var canEdit = uptimeGadget.isOwner();
 
 	var buildTreeWithServerResults = function(userSettings) {
 		if (userSettings == null) {
@@ -12,7 +13,9 @@ TopologyTreeSourceCreator = function() {
 			};
 		}
 		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
-		$('input[type="checkbox"][name="showEntireTree"]').attr('checked', userSettings.showFullTree);
+		var showFullTreeCheckbox = $('input[type="checkbox"][name="showEntireTree"]');
+		showFullTreeCheckbox.prop('checked', userSettings.showFullTree);
+		showFullTreeCheckbox.prop('disabled', !canEdit);
 		populateTopLevelParentSelect();
 		buildTreeWithDefaultRootsInMemory();
 	};
@@ -170,6 +173,7 @@ TopologyTreeSourceCreator = function() {
 					"<option value=" + parent.id + " " + shouldBeSelected(parent) + ">" + parent.name + "</option>");
 		});
 		var chosen = $("#selectTopLevelParent").chosen();
+		$("#selectTopLevelParent").prop('disabled', !canEdit).trigger("liszt:updated");
 		chosen.change(updateRootNodes);
 	};
 
