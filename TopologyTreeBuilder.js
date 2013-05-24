@@ -110,19 +110,19 @@ TopologyTreeBuilder = function(options) {
 			return "black";
 		}
 		if (entityStatus == "OK") {
-			return "lawngreen";
+			return "#67B10B";
 		}
 		if (entityStatus == "MAINT") {
-			return "dodgerblue";
+			return "#555B98";
 		}
 		if (entityStatus == "CRIT") {
-			return "orangered";
+			return "#B61211";
 		}
 		if (entityStatus == "WARN") {
-			return "gold";
+			return "#DAD60B";
 		}
 		if (entityStatus == "UNKNOWN") {
-			return "darkgrey";
+			return "#E6E6E6";
 		}
 	};
 
