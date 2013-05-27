@@ -21,7 +21,7 @@ TopologyTreeSourceCreator = function() {
 	};
 
 	var loadUserSettings = function() {
-		uptimeGadget.loadSettings(buildTreeWithServerResults, errorCallback);
+		uptimeGadget.loadSettings().then(buildTreeWithServerResults, errorCallback);
 	};
 
 	var statusInfoCallback = function(elementNode, statusInfo) {
@@ -196,7 +196,7 @@ TopologyTreeSourceCreator = function() {
 			rootNodes : rootNodesAsInt,
 			showFullTree : showFullTree
 		};
-		uptimeGadget.saveSettings(settings, function() {
+		uptimeGadget.saveSettings(settings).then(function() {
 		}, function() {
 		});
 	};
