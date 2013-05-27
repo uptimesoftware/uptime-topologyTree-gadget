@@ -5,26 +5,26 @@
 		thumbnail="thumbs.png" />
 	<Content type="html">
 <![CDATA[
-		<html lang="en">
-		<head>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
 		<title>Topological Failure Tree</title>
 		#includeResources(jquery,d3)
-		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" type="text/css" rel="stylesheet" />
-		<link href="__UPTIME_GADGET_BASE__/topology.css" type="text/css" rel="stylesheet" />
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/TopologyTreeBuilder.js"></script>
-		<script type="text/javascript" src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>
-		</head>
+		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" rel="stylesheet" />
+		<link href="__UPTIME_GADGET_BASE__/topology.css" rel="stylesheet" />
+		<script src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
+		<script src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
+		<script src="__UPTIME_GADGET_BASE__/TopologyTreeBuilder.js"></script>
+		<script src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>
+	</head>
 	<body>
-	<div id="showEntireTreeContainer"><input type=checkbox id="showEntireTreeCheckbox" name="showEntireTree"><label for="showEntireTreeCheckbox">Show Full Topology</label></div>
-	<div id="selectTopLevelParentContainer"><select data-placeholder="Select root elements to display" multiple="true" id="selectTopLevelParent"></select></div>
-	<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif"></img></div>
-	<div id="error"></div>
-	<div style="position: fixed" id="tooltip" class="systemTooltip"> </div>
-</body>
+		<div id="showEntireTreeContainer"><input type="checkbox" id="showEntireTreeCheckbox" name="showEntireTree"><label for="showEntireTreeCheckbox">Show Full Topology</label></div>
+		<div id="selectTopLevelParentContainer"><select data-placeholder="Select root elements to display" multiple="true" id="selectTopLevelParent"></select></div>
+		<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif" /></div>
+		<div id="error"></div>
+		<div id="tooltip" class="systemTooltip"></div>
+	</body>
 </html>
-
 ]]>
 	</Content>
 </Module>
