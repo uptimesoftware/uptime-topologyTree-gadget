@@ -2,12 +2,8 @@ $(function() {
 
 	var topologyTreeBuilder = new TopologyTreeBuilder();
 	var sourceBuilder = new TopologyTreeSourceCreator({
-		renderTree : function(source) {
-			topologyTreeBuilder.buildTree(source);
-		},
-		displayError : function() {
-			topologyTreeBuilder.displayError();
-		}
+		renderTree : topologyTreeBuilder.buildTree,
+		displayError : topologyTreeBuilder.displayError
 	});
 
 	uptimeGadget.registerOnLoadHandler(function(onLoadData) {

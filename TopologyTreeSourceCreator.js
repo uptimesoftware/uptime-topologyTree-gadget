@@ -8,7 +8,7 @@ TopologyTreeSourceCreator = function(options) {
 	if (typeof options.displayError != "function") {
 		throw new TypeError("renderTree argument must be a function");
 	}
-	
+
 	var renderTree = options.renderTree;
 	var displayError = options.displayError;
 
@@ -16,13 +16,17 @@ TopologyTreeSourceCreator = function(options) {
 	var initialRootNodes = [];
 	var canEdit = uptimeGadget.isOwner();
 
-	function buildTreeWithServerResults(userSettings) {
+	function buildTreeWithServerResults(userSettings, elementNodes) {
 		if (userSettings == null) {
 			userSettings = {
 				rootNodes : [],
 				showFullTree : false
 			};
 		}
+		availableElementsForTree = {};
+		$.each(elementNodes, function(i, elementNode) {
+			availableElementsForTree[elementNode.id] = elementNode;
+		});
 		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
 		var showFullTreeCheckbox = $('input[name="showEntireTree"]');
 		showFullTreeCheckbox.prop('checked', userSettings.showFullTree);
@@ -31,46 +35,53 @@ TopologyTreeSourceCreator = function(options) {
 		buildTreeWithDefaultRootsInMemory();
 	}
 
-	function loadUserSettings() {
-		uptimeGadget.loadSettings().then(buildTreeWithServerResults, displayError);
-	}
-
-	function handleElementStatus(elementNode, statusInfo) {
-		elementNode.status = statusInfo.status;
-		elementNode.parents = statusInfo.parentsStatus;
-		elementNode.monitorStatus = statusInfo.monitorStatuses;
-		elementNode.message = statusInfo.message;
-		elementNode.statusTask.resolve();
-	}
-
-	function pushIntoElementArray(elements) {
-		numElements = elements.length - 1;
-		var allStatusTasks = [];
-
-		$.each(elements, function(index, element) {
+	function getElementStatuses(elements) {
+		var promises = [];
+		$.each(elements, function(i, element) {
 			if (element.isMonitored) {
-				var statusTask = new $.Deferred();
-				allStatusTasks.push(statusTask);
-				var elementNode = new Object();
-				elementNode.statusTask = statusTask;
+				var deferred = UPTIME.pub.gadgets.promises.defer();
+				var elementNode = {};
 				elementNode.id = element.id;
 				elementNode.name = element.name;
 				elementNode.typeSubtypeName = element.typeSubtypeName;
-				setupStatus(elementNode);
-				availableElementsForTree[elementNode.id] = elementNode;
+				$.ajax("/api/v1/elements/" + element.id + "/status", {
+					cache : false
+				}).done(function(data, textStatus, jqXHR) {
+					elementNode.status = data.status;
+					elementNode.parents = getAdditionalStatus(data.topologyParentStatus);
+					elementNode.monitorStatus = getAdditionalStatus(data.monitorStatus);
+					elementNode.message = data.message;
+					deferred.resolve(elementNode);
+				}).fail(
+						function(jqXHR, textStatus, errorThrown) {
+							deferred.reject("Unable to build Topology Tree. Failed to retrieve element status for "
+									+ elementNode.name + ".");
+						});
+				promises.push(deferred.promise);
 			}
 		});
-
-		$.when.apply($, allStatusTasks).done(loadUserSettings);
+		return UPTIME.pub.gadgets.promises.all(promises);
 	}
 
-	this.getSource = function() {
+	function getElements(settings) {
+		var deferred = UPTIME.pub.gadgets.promises.defer();
 		$.ajax("/api/v1/elements", {
 			cache : false
 		}).done(function(data, textStatus, jqXHR) {
-			pushIntoElementArray(data);
+			deferred.resolve(data);
 		}).fail(function(jqXHR, textStatus, errorThrown) {
-			displayError();
+			deferred.reject("Error loading elements from up.time Controller.");
+		});
+		return deferred.promise;
+	}
+
+	this.getSource = function() {
+		uptimeGadget.loadSettings().then(function(settings) {
+			getElements().then(getElementStatuses).then(function(elementNodes) {
+				buildTreeWithServerResults(settings, elementNodes);
+			}, displayError);
+		}, function() {
+			displayError("Error loading Topology Tree settings.");
 		});
 	};
 
@@ -79,14 +90,14 @@ TopologyTreeSourceCreator = function(options) {
 	};
 
 	function createNodeOnTree(currentNode) {
-		var newNode = new Object();
+		var newNode = {};
 		newNode.entityId = currentNode.id;
 		newNode.entityName = currentNode.name;
 		newNode.entityStatus = currentNode.status;
 		newNode.statusMessage = currentNode.message;
 		newNode.monitorStatus = currentNode.monitorStatus;
 		newNode.type = currentNode.typeSubtypeName;
-		newNode.dependents = new Array();
+		newNode.dependents = [];
 		return newNode;
 	}
 
@@ -111,25 +122,10 @@ TopologyTreeSourceCreator = function(options) {
 		buildTreeInMemory(initialRootNodes);
 	}
 
-	function setupStatus(elementNode) {
-		$.ajax("/api/v1/elements/" + elementNode.id + "/status", {
-			cache : false
-		}).done(function(elementStatus, textStatus, jqXHR) {
-			var statusInfo = {};
-			statusInfo.message = elementStatus.message;
-			statusInfo.status = elementStatus.status;
-			statusInfo.parentsStatus = getAdditionalStatus(elementStatus.topologyParentStatus);
-			statusInfo.monitorStatuses = getAdditionalStatus(elementStatus.monitorStatus);
-			handleElementStatus(elementNode, statusInfo);
-		}).fail(function(jqXHR, textStatus, errorThrown) {
-			displayError();
-		});
-	}
-
 	function getAdditionalStatus(additionalStatus) {
 		// At least one Topological Parent, push parents into the element's
 		// 'parents' array
-		var additionalStatusArray = new Array();
+		var additionalStatusArray = [];
 		if (additionalStatus.length != 0) {
 			$.each(additionalStatus, function(j, additionalElementStatus) {
 				additionalStatusArray.push({
@@ -144,14 +140,14 @@ TopologyTreeSourceCreator = function(options) {
 	}
 
 	function createRoot() {
-		var root = new Object();
+		var root = {};
 		root.entityId = 0;
 		root.entityName = "up.time";
-		root.dependents = new Array();
+		root.dependents = [];
 		root.entityStatus = "OK";
 		root.type = "Invisible";
 		root.statusMessage = "This is always the root of any topology tree";
-		root.monitorStatus = new Array();
+		root.monitorStatus = [];
 		return root;
 	}
 
@@ -266,14 +262,14 @@ TopologyTreeSourceCreator = function(options) {
 			root.dependents.push(parentOnTree);
 			return parentOnTree;
 		}
-		var newNode = new Object();
+		var newNode = {};
 		newNode.entityId = node.id;
 		newNode.entityName = node.name;
 		newNode.entityStatus = node.status;
 		newNode.statusMessage = "You don't have permission to view this element";
-		newNode.monitorStatus = new Array();
+		newNode.monitorStatus = [];
 		newNode.type = "Invisible";
-		newNode.dependents = new Array();
+		newNode.dependents = [];
 		elementsOnTree[newNode.entityId] = newNode;
 		root.dependents.push(newNode);
 		return newNode;

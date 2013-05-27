@@ -82,10 +82,10 @@ TopologyTreeBuilder = function() {
 
 	};
 
-	this.displayError = function() {
+	this.displayError = function(message) {
 		$("#topoTree").hide();
 		$("#tooltip").hide();
-		$("#error").text("Error loading topology tree.").show();
+		$("#error").text(message).show();
 	};
 
 	function toTreeDimensions(dimensions) {
