@@ -40,6 +40,10 @@ ul {
 	padding: 0;
 }
 
+#tooltip {
+	position: fixed;	
+} 
+
 .tooltipDetail li div {
 	display: block;
 	float: left;
