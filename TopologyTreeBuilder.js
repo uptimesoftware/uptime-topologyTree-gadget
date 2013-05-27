@@ -1,22 +1,14 @@
-TopologyTreeBuilder = function(options) {
-	var links;
-	var height = 100;
-	var width = 100;
+TopologyTreeBuilder = function() {
+	var treeMargins = [ 90, 20, 200, 70 ];
+	var visDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
+	var treeDimensions = toTreeDimensions(visDimensions);
 
 	var root = null;
 
-	if (typeof options == "object") {
-		if (typeof options.height == "number") {
-			height = options.height;
-		}
-		if (typeof options.width == "number") {
-			width = options.width;
-		}
-	}
 	var topologyTreeInstance = this;
 
-	var m = [ 145, 20, 200, 70 ], w = width - m[0] - m[2], h = height - m[1] - m[3], i = 0;
-	var tree = d3.layout.tree().size([ h, w ]).children(function(d) {
+	var currNodeId = 0;
+	var tree = d3.layout.tree().size([ treeDimensions.height, treeDimensions.width ]).children(function(d) {
 		return d.dependents;
 	}).sort(function(a, b) {
 		return naturalSort(a.entityName, b.entityName);
@@ -25,32 +17,33 @@ TopologyTreeBuilder = function(options) {
 	var diagonal = d3.svg.diagonal().projection(function(d) {
 		return [ d.y, d.x ];
 	});
-	var vis = d3.select("#topoTree").append("svg:svg").attr("width", width).attr("height", height).append("svg:g").attr(
-			"transform", "translate(" + m[0] + "," + m[1] + ")");
+	var vis = d3.select("#topoTree").append("svg:svg").attr("width", visDimensions.width).attr("height", visDimensions.height)
+			.append("svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
 
 	this.resize = function(dimensions) {
 
-		var newWidth = dimensions.width;
-		var newHeight = dimensions.height;
+		visDimensions = dimensions;
+		treeDimensions = toTreeDimensions(visDimensions);
 
-		var m = [ 145, 20, 200, 70 ], w = newWidth - m[0] - m[2], h = newHeight - m[1] - m[3];
+		d3.select("svg").attr("width", visDimensions.width).attr("height", visDimensions.height);
 
-		vis = d3.select("svg").attr("width", newWidth).attr("height", newHeight);
+		tree.size([ treeDimensions.height, treeDimensions.width ]);
 
-		tree = tree.size([ h, w ]);
-
-		topologyTreeInstance.updateTree(root);
+		if (root != null) {
+			topologyTreeInstance.updateTree(root);
+		}
 
 	};
 
 	this.buildTree = function(source) {
 
 		root = source;
-		root.x0 = h / 2;
+		root.x0 = treeDimensions.height / 2;
 		root.y0 = 10;
 		$("#inProgressBar").hide();
 		$("#showEntireTreeContainer").show();
 		$("#selectTopLevelParentContainer").show();
+		$("#tooltip").show();
 		if (!uptimeGadget.isOwner()) {
 			disableTreeControls();
 		}
@@ -70,7 +63,7 @@ TopologyTreeBuilder = function(options) {
 		detectCollisions(nodes);
 
 		var node = vis.selectAll("g.node").data(nodes, function(d) {
-			return d.id || (d.id = ++i);
+			return d.id || (d.id = ++currNodeId);
 		});
 
 		renderLinks(nodes, source, duration);
@@ -89,22 +82,28 @@ TopologyTreeBuilder = function(options) {
 
 	};
 
-	this.displayError = function(message) {
+	this.displayError = function() {
 		$("#topoTree").hide();
 		$("#tooltip").hide();
-		$("#error").text("Error loading topological failure tree.").show();
+		$("#error").text("Error loading topology tree.").show();
 	};
 
-	var disableTreeControls = function() {
+	function toTreeDimensions(dimensions) {
+		var w = dimensions.width - treeMargins[0] - treeMargins[2];
+		var h = dimensions.height - treeMargins[1] - treeMargins[3];
+		return new UPTIME.pub.gadgets.Dimensions(w, h);
+	}
+
+	function disableTreeControls() {
 		$("#showEntireTreeCheckbox").prop('disabled', true);
 		$("#selectTopLevelParent").prop('disabled', true);
 		$.each($("#selectTopLevelParent > option"), function(i, option) {
 			$(option).prop('disabled', true);
 		});
 		$("#selectTopLevelParent").trigger("liszt:updated");
-	};
+	}
 
-	var getFillColour = function(d) {
+	function getFillColour(d) {
 		var entityStatus = d.entityStatus;
 		if (d.entityId == 0) {
 			return "black";
@@ -124,45 +123,45 @@ TopologyTreeBuilder = function(options) {
 		if (entityStatus == "UNKNOWN") {
 			return "#E6E6E6";
 		}
-	};
+	}
 
-	var getStrokeWidthBasedOnChildren = function(node) {
+	function getStrokeWidthBasedOnChildren(node) {
 		if (node._children) {
 			return 6.5 + node._children.length * 0.1;
 		}
 		return 4.5;
-	};
+	}
 
-	var nodeClickHandler = function(node) {
+	function nodeClickHandler(node) {
 		toggle(node);
 		topologyTreeInstance.updateTree(node);
-	};
+	}
 
-	var goToElement = function(node) {
+	function goToElement(node) {
 		var url = uptimeGadget.getElementUrls(node.entityId, node.entityName);
 		if (node.type != "Invisible") {
 			window.top.location.href = url.services;
 		}
-	};
+	}
 
-	var showStatusDetail = function(d) {
+	function showStatusDetail(d) {
 		var text = d3.select(this).select("text");
 		text.style("fill-opacity", getTextOpacity(d));
 
 		showStatusMessage(d);
 
 		highlightPath(d);
-	};
+	}
 
-	var showStatusMessage = function(d) {
+	function showStatusMessage(d) {
 		var div = d3.select("#tooltip");
 
 		div.transition().duration(200).style("opacity", 1).style("border-color", getFillColour(d));
 
 		div.html(constructMessage(d)).style("left", (d3.event.pageX + 10) + "px").style("top", (d3.event.pageY - 28) + "px");
-	};
+	}
 
-	var constructMessage = function(d) {
+	function constructMessage(d) {
 		var message = "<ul class='tooltipDetail'>";
 		message += "<li><div class='tooltipDetailTitle'>Element Name:</div><div>" + d.entityName + "</div></li>";
 		message += "<li><div class='tooltipDetailTitle'>Element Status:</div><div>" + d.entityStatus + "</div></li>";
@@ -177,18 +176,18 @@ TopologyTreeBuilder = function(options) {
 		}
 		message += "</ul>";
 		return message;
-	};
+	}
 
-	var hideStatusDetail = function(d) {
+	function hideStatusDetail(d) {
 
 		var text = d3.select(this).select("text");
 		text.style("fill-opacity", getTextOpacity(d));
 		var div = d3.select("#tooltip");
 		div.transition().duration(200).style("opacity", 1e-6);
 		vis.selectAll(".link").style("stroke", "lightgrey");
-	};
+	}
 
-	var highlightPath = function(d) {
+	function highlightPath(d) {
 		var eligibleTargets = getEligibleTargetIds(d);
 		vis.selectAll(".link").style("stroke", function(p) {
 
@@ -197,18 +196,18 @@ TopologyTreeBuilder = function(options) {
 				return getFillColour(d);
 			}
 		});
-	};
+	}
 
-	var getEligibleTargetIds = function(d) {
+	function getEligibleTargetIds(d) {
 		var eligibleIds = [];
 		eligibleIds.push(d.id);
 		if (d.parent) {
 			eligibleIds = eligibleIds.concat(getEligibleTargetIds(d.parent));
 		}
 		return eligibleIds;
-	};
+	}
 
-	var getTextOpacity = function(d) {
+	function getTextOpacity(d) {
 		if (d.type == "Invisible" && d.isCollide == false) {
 			return 0.5;
 		}
@@ -216,9 +215,9 @@ TopologyTreeBuilder = function(options) {
 			return 1;
 		}
 		return 1e-6;
-	};
+	}
 
-	var removeExitingNodes = function(node, duration, source) {
+	function removeExitingNodes(node, duration, source) {
 		// Transition exiting nodes to the parent's new position.
 		var nodeExit = node.exit().transition().duration(duration).attr("transform", function(d) {
 			return "translate(" + source.y + "," + source.x + ")";
@@ -228,9 +227,9 @@ TopologyTreeBuilder = function(options) {
 
 		nodeExit.select("text").style("fill-opacity", 1e-6);
 
-	};
+	}
 
-	var updateExistingNodes = function(node, duration, textPositionOffset) {
+	function updateExistingNodes(node, duration, textPositionOffset) {
 		// Transition nodes to their new position.
 		var nodeUpdate = node.transition().duration(duration).attr("transform", function(d) {
 			return "translate(" + d.y + "," + d.x + ")";
@@ -244,9 +243,9 @@ TopologyTreeBuilder = function(options) {
 		}).attr("x", function(d) {
 			return d.children ? -textPositionOffset : textPositionOffset;
 		}).style("fill-opacity", getTextOpacity);
-	};
+	}
 
-	var createNewNodes = function createNewNodes(node, source, textPositionOffset) {
+	function createNewNodes(node, source, textPositionOffset) {
 
 		// Enter any new nodes at the parent's previous position.
 
@@ -259,9 +258,9 @@ TopologyTreeBuilder = function(options) {
 		nodeEnter.append("svg:text").attr("dy", ".35em").text(function(d) {
 			return d.entityName;
 		}).style("fill-opacity", 1e-6).on("click", goToElement);
-	};
+	}
 
-	var renderLinks = function(nodes, source, duration) {
+	function renderLinks(nodes, source, duration) {
 		// Update the links…
 		var link = vis.selectAll("path.link").data(tree.links(nodes), function(d) {
 			return d.target.id;
@@ -293,10 +292,10 @@ TopologyTreeBuilder = function(options) {
 				target : o
 			});
 		}).remove();
-	};
+	}
 
 	// Toggle children.
-	var toggle = function(d) {
+	function toggle(d) {
 		if (d.children) {
 			d._children = d.dependents;
 			d.children = null;
@@ -306,9 +305,9 @@ TopologyTreeBuilder = function(options) {
 			d.children = d._children;
 			d._children = null;
 		}
-	};
+	}
 
-	var isCollide = function(node, node_sibling) {
+	function isCollide(node, node_sibling) {
 		var r = getStrokeWidthBasedOnChildren(node);
 		n1x1 = node.x - r, n1x2 = node.x + r;
 		n1y1 = node.y - r, n1y2 = node.y + r;
@@ -319,9 +318,9 @@ TopologyTreeBuilder = function(options) {
 				&& ((n1y1 <= n2y2 && n1y1 >= n2y1) || (n1y2 >= n2y2 && n1y2 <= n2y1));
 
 		return result;
-	};
+	}
 
-	var detectCollisions = function(nodes) {
+	function detectCollisions(nodes) {
 		nodes.forEach(function(d, index) {
 			d.isCollide = false;
 			if (d.parent) {
@@ -337,6 +336,6 @@ TopologyTreeBuilder = function(options) {
 
 			}
 		});
-	};
+	}
 
 };

@@ -1,11 +1,22 @@
-TopologyTreeSourceCreator = function() {
+TopologyTreeSourceCreator = function(options) {
+	if (typeof options != "object") {
+		throw new TypeError("Must provide renderTree and displayError callbacks in options");
+	}
+	if (typeof options.renderTree != "function") {
+		throw new TypeError("renderTree argument must be a function");
+	}
+	if (typeof options.displayError != "function") {
+		throw new TypeError("renderTree argument must be a function");
+	}
+	
+	var renderTree = options.renderTree;
+	var displayError = options.displayError;
+
 	var availableElementsForTree = {};
 	var initialRootNodes = [];
-	var treeRenderingFunction;
-	var errorCallback = null;
 	var canEdit = uptimeGadget.isOwner();
 
-	var buildTreeWithServerResults = function(userSettings) {
+	function buildTreeWithServerResults(userSettings) {
 		if (userSettings == null) {
 			userSettings = {
 				rootNodes : [],
@@ -13,26 +24,26 @@ TopologyTreeSourceCreator = function() {
 			};
 		}
 		initialRootNodes = getInitialRootNodes(userSettings.rootNodes);
-		var showFullTreeCheckbox = $('input[type="checkbox"][name="showEntireTree"]');
+		var showFullTreeCheckbox = $('input[name="showEntireTree"]');
 		showFullTreeCheckbox.prop('checked', userSettings.showFullTree);
 		showFullTreeCheckbox.prop('disabled', !canEdit);
 		populateTopLevelParentSelect();
 		buildTreeWithDefaultRootsInMemory();
-	};
+	}
 
-	var loadUserSettings = function() {
-		uptimeGadget.loadSettings().then(buildTreeWithServerResults, errorCallback);
-	};
+	function loadUserSettings() {
+		uptimeGadget.loadSettings().then(buildTreeWithServerResults, displayError);
+	}
 
-	var statusInfoCallback = function(elementNode, statusInfo) {
+	function handleElementStatus(elementNode, statusInfo) {
 		elementNode.status = statusInfo.status;
 		elementNode.parents = statusInfo.parentsStatus;
 		elementNode.monitorStatus = statusInfo.monitorStatuses;
 		elementNode.message = statusInfo.message;
 		elementNode.statusTask.resolve();
-	};
+	}
 
-	var pushIntoElementArray = function(elements) {
+	function pushIntoElementArray(elements) {
 		numElements = elements.length - 1;
 		var allStatusTasks = [];
 
@@ -45,21 +56,21 @@ TopologyTreeSourceCreator = function() {
 				elementNode.id = element.id;
 				elementNode.name = element.name;
 				elementNode.typeSubtypeName = element.typeSubtypeName;
-				setupStatus(elementNode, statusInfoCallback);
+				setupStatus(elementNode);
 				availableElementsForTree[elementNode.id] = elementNode;
 			}
 		});
 
 		$.when.apply($, allStatusTasks).done(loadUserSettings);
-	};
+	}
 
-	this.getSource = function(successCallback, errCallback) {
-		errorCallback = errCallback;
-		treeRenderingFunction = successCallback;
+	this.getSource = function() {
 		$.ajax("/api/v1/elements", {
 			cache : false
 		}).done(function(data, textStatus, jqXHR) {
 			pushIntoElementArray(data);
+		}).fail(function(jqXHR, textStatus, errorThrown) {
+			displayError();
 		});
 	};
 
@@ -67,7 +78,7 @@ TopologyTreeSourceCreator = function() {
 		updateRootNodes();
 	};
 
-	var createNodeOnTree = function(currentNode) {
+	function createNodeOnTree(currentNode) {
 		var newNode = new Object();
 		newNode.entityId = currentNode.id;
 		newNode.entityName = currentNode.name;
@@ -77,13 +88,13 @@ TopologyTreeSourceCreator = function() {
 		newNode.type = currentNode.typeSubtypeName;
 		newNode.dependents = new Array();
 		return newNode;
-	};
+	}
 
-	var hasNoParents = function(node) {
+	function hasNoParents(node) {
 		return node.parents.length == 0;
-	};
+	}
 
-	var getInitialRootNodes = function(userRoots) {
+	function getInitialRootNodes(userRoots) {
 		if (userRoots.length != 0) {
 			return userRoots;
 		}
@@ -94,13 +105,13 @@ TopologyTreeSourceCreator = function() {
 			}
 		});
 		return defaultRoot;
-	};
+	}
 
-	var buildTreeWithDefaultRootsInMemory = function() {
+	function buildTreeWithDefaultRootsInMemory() {
 		buildTreeInMemory(initialRootNodes);
-	};
+	}
 
-	var setupStatus = function(elementNode, handleElementStatus) {
+	function setupStatus(elementNode) {
 		$.ajax("/api/v1/elements/" + elementNode.id + "/status", {
 			cache : false
 		}).done(function(elementStatus, textStatus, jqXHR) {
@@ -111,11 +122,11 @@ TopologyTreeSourceCreator = function() {
 			statusInfo.monitorStatuses = getAdditionalStatus(elementStatus.monitorStatus);
 			handleElementStatus(elementNode, statusInfo);
 		}).fail(function(jqXHR, textStatus, errorThrown) {
-			errorCallback(jqXHR, textStatus, errorThrown);
+			displayError();
 		});
-	};
+	}
 
-	var getAdditionalStatus = function(additionalStatus) {
+	function getAdditionalStatus(additionalStatus) {
 		// At least one Topological Parent, push parents into the element's
 		// 'parents' array
 		var additionalStatusArray = new Array();
@@ -130,9 +141,9 @@ TopologyTreeSourceCreator = function() {
 			});
 		}
 		return additionalStatusArray;
-	};
+	}
 
-	var createRoot = function() {
+	function createRoot() {
 		var root = new Object();
 		root.entityId = 0;
 		root.entityName = "up.time";
@@ -142,12 +153,12 @@ TopologyTreeSourceCreator = function() {
 		root.statusMessage = "This is always the root of any topology tree";
 		root.monitorStatus = new Array();
 		return root;
-	};
+	}
 
-	var buildTreeInMemory = function(rootNodes) {
+	function buildTreeInMemory(rootNodes) {
 		var elementsOnTree = {};
 		var root = createRoot();
-		var showFullTree = $('input[type="checkbox"][name="showEntireTree"]').is(':checked');
+		var showFullTree = $('input[name="showEntireTree"]').is(':checked');
 		$.each(availableElementsForTree, function(i, currentNode) {
 			if (isCurrentNodeRootNode(currentNode, rootNodes)) {
 				var childNode = getNodeOnTree(elementsOnTree, currentNode);
@@ -158,14 +169,14 @@ TopologyTreeSourceCreator = function() {
 				createBranch(availableElementsForTree, elementsOnTree, currentNode, root);
 			}
 		});
-		treeRenderingFunction(decompressTree(root));
-	};
+		renderTree(decompressTree(root));
+	}
 
-	var isCurrentNodeRootNode = function(currentNode, rootNodes) {
+	function isCurrentNodeRootNode(currentNode, rootNodes) {
 		return $.inArray(currentNode.id, rootNodes) > -1;
-	};
+	}
 
-	var populateTopLevelParentSelect = function() {
+	function populateTopLevelParentSelect() {
 		var parents = getNodesWithChildren();
 		$.each(parents, function(i, parent) {
 
@@ -175,23 +186,23 @@ TopologyTreeSourceCreator = function() {
 		var chosen = $("#selectTopLevelParent").chosen();
 		$("#selectTopLevelParent").prop('disabled', !canEdit).trigger("liszt:updated");
 		chosen.change(updateRootNodes);
-	};
+	}
 
-	var shouldBeSelected = function(parent) {
+	function shouldBeSelected(parent) {
 		if (isCurrentNodeRootNode(parent, initialRootNodes)) {
 			return "selected='selected'";
 		}
 		return "";
-	};
+	}
 
-	var updateRootNodes = function(event) {
+	function updateRootNodes(event) {
 		var rootNodes = getUserSelectedRootNodes();
 		var rootNodesAsInt = [];
 		$.each(rootNodes, function(i, rootNode) {
 			rootNodesAsInt.push(parseInt(rootNode));
 		});
 		buildTreeInMemory(rootNodesAsInt);
-		var showFullTree = $('input[type="checkbox"][name="showEntireTree"]').is(':checked');
+		var showFullTree = $('input[name="showEntireTree"]').is(':checked');
 		var settings = {
 			rootNodes : rootNodesAsInt,
 			showFullTree : showFullTree
@@ -199,17 +210,17 @@ TopologyTreeSourceCreator = function() {
 		uptimeGadget.saveSettings(settings).then(function() {
 		}, function() {
 		});
-	};
+	}
 
-	var getUserSelectedRootNodes = function() {
+	function getUserSelectedRootNodes() {
 		var rootNodes = $("#selectTopLevelParent").val();
 		if (rootNodes == null) {
 			return [];
 		}
 		return rootNodes;
-	};
+	}
 
-	var getNodesWithChildren = function() {
+	function getNodesWithChildren() {
 		var eligibleParents = {};
 		$.each(availableElementsForTree, function(i, currentNode) {
 			$.each(currentNode.parents, function(j, parent) {
@@ -217,13 +228,13 @@ TopologyTreeSourceCreator = function() {
 			});
 		});
 		return eligibleParents;
-	};
+	}
 
-	var decompressTree = function(source) {
+	function decompressTree(source) {
 		return jQuery.extend(true, {}, source);
-	};
+	}
 
-	var createBranch = function(availableElementsForTree, elementsOnTree, node, root) {
+	function createBranch(availableElementsForTree, elementsOnTree, node, root) {
 		var childNode = getNodeOnTree(elementsOnTree, node);
 		elementsOnTree[childNode.entityId] = childNode;
 
@@ -246,9 +257,9 @@ TopologyTreeSourceCreator = function() {
 		});
 
 		return childNode;
-	};
+	}
 
-	var buildInvisibleParentNode = function(node, elementsOnTree, root) {
+	function buildInvisibleParentNode(node, elementsOnTree, root) {
 		if (typeof elementsOnTree[node.id] != "undefined") {
 			var parentOnTree = elementsOnTree[node.id];
 			elementsOnTree[parentOnTree.entityId] = parentOnTree;
@@ -266,28 +277,28 @@ TopologyTreeSourceCreator = function() {
 		elementsOnTree[newNode.entityId] = newNode;
 		root.dependents.push(newNode);
 		return newNode;
-	};
+	}
 
-	var isParentNodeAvailableForTree = function(parentNode) {
+	function isParentNodeAvailableForTree(parentNode) {
 		return parentNode != null;
-	};
+	}
 
-	var isParentExist = function(parent) {
+	function isParentExist(parent) {
 		return typeof parent != "undefined";
-	};
+	}
 
-	var isAlreadyDependent = function(parent, child) {
+	function isAlreadyDependent(parent, child) {
 		var matchedElements = $.grep(parent.dependents, function(e) {
 			return e.entityId == child.entityId;
 		});
 		return matchedElements != 0;
-	};
+	}
 
-	var getNodeOnTree = function(elementsOnTree, currentNode) {
+	function getNodeOnTree(elementsOnTree, currentNode) {
 		if (typeof elementsOnTree[currentNode.id] != "undefined") {
 			return elementsOnTree[currentNode.id];
 		}
 		return createNodeOnTree(currentNode);
-	};
+	}
 
 };

@@ -42,6 +42,7 @@ ul {
 
 #tooltip {
 	position: fixed;	
+	display: none;
 } 
 
 .tooltipDetail li div {
