@@ -1,14 +1,16 @@
 $(function() {
 
+	var rebuildInterval = 15 * 60 * 1000;
+
 	var topologyTreeBuilder = new TopologyTreeBuilder();
 	var sourceBuilder = new TopologyTreeSourceCreator({
 		renderTree : topologyTreeBuilder.buildTree,
 		displayError : topologyTreeBuilder.displayError
 	});
-
+	
 	uptimeGadget.registerOnLoadHandler(function(onLoadData) {
 		topologyTreeBuilder.resize(onLoadData.dimensions);
-		sourceBuilder.getSource();
+		rebuildTree();
 	});
 
 	uptimeGadget.registerOnResizeHandler(function(dimensions) {
@@ -18,5 +20,10 @@ $(function() {
 	$('input[name="showEntireTree"]').change(function() {
 		sourceBuilder.rebuildTreeWithCachedResults();
 	});
+	
+	function rebuildTree() {
+		sourceBuilder.getSource();
+		setTimeout(rebuildTree, rebuildInterval);
+	}
 
 });

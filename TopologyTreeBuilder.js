@@ -19,7 +19,8 @@ TopologyTreeBuilder = function() {
 	});
 	var vis = d3.select("#topoTree").append("svg:svg").attr("width", visDimensions.width).attr("height", visDimensions.height)
 			.append("svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
-
+	vis.append("svg:text").style("opacity", 1e-6);
+	
 	this.resize = function(dimensions) {
 
 		visDimensions = dimensions;
@@ -40,16 +41,14 @@ TopologyTreeBuilder = function() {
 		root = source;
 		root.x0 = treeDimensions.height / 2;
 		root.y0 = 10;
+		if (!uptimeGadget.isOwner()) {
+			disableTreeControls();
+		}
 		$("#inProgressBar").hide();
 		$("#showEntireTreeContainer").show();
 		$("#selectTopLevelParentContainer").show();
 		$("#tooltip").show();
-		if (!uptimeGadget.isOwner()) {
-			disableTreeControls();
-		}
 		topologyTreeInstance.updateTree(root);
-
-		vis.append("svg:text").style("opacity", 1e-6);
 	};
 
 	this.updateTree = function(source) {

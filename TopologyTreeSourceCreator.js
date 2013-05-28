@@ -174,14 +174,16 @@ TopologyTreeSourceCreator = function(options) {
 
 	function populateTopLevelParentSelect() {
 		var parents = getNodesWithChildren();
+		var topLevelParentSelector = $("#selectTopLevelParent").empty().prop('disabled', !canEdit);
 		$.each(parents, function(i, parent) {
-
-			$("#selectTopLevelParent").append(
+			topLevelParentSelector.append(
 					"<option value=" + parent.id + " " + shouldBeSelected(parent) + ">" + parent.name + "</option>");
 		});
-		var chosen = $("#selectTopLevelParent").chosen();
-		$("#selectTopLevelParent").prop('disabled', !canEdit).trigger("liszt:updated");
-		chosen.change(updateRootNodes);
+		if (topLevelParentSelector.hasClass("chzn-done")) {
+			topLevelParentSelector.trigger("liszt:updated");
+		} else {
+			topLevelParentSelector.chosen().change(updateRootNodes);
+		}
 	}
 
 	function shouldBeSelected(parent) {
