@@ -38,7 +38,7 @@ TopologyTreeSourceCreator = function(options) {
 	function getElementStatuses(elements) {
 		var promises = [];
 		$.each(elements, function(i, element) {
-			if (element.isMonitored) {
+			if (element.isMonitored && (element.topologicalParents.length > 0 || element.topologicalChildren.length > 0)) {
 				var deferred = UPTIME.pub.gadgets.promises.defer();
 				var elementNode = {};
 				elementNode.id = element.id;
@@ -48,7 +48,7 @@ TopologyTreeSourceCreator = function(options) {
 					cache : false
 				}).done(function(data, textStatus, jqXHR) {
 					elementNode.status = data.status;
-					elementNode.parents = getAdditionalStatus(data.topologyParentStatus);
+					elementNode.parents = element.topologicalParents;
 					elementNode.monitorStatus = getAdditionalStatus(data.monitorStatus);
 					elementNode.message = data.message;
 					deferred.resolve(elementNode);
@@ -101,17 +101,13 @@ TopologyTreeSourceCreator = function(options) {
 		return newNode;
 	}
 
-	function hasNoParents(node) {
-		return node.parents.length == 0;
-	}
-
 	function getInitialRootNodes(userRoots) {
 		if (userRoots.length != 0) {
 			return userRoots;
 		}
 		var defaultRoot = [];
 		$.each(availableElementsForTree, function(i, element) {
-			if (hasNoParents(element)) {
+			if (element.parents.length == 0) {
 				defaultRoot.push(element.id);
 			}
 		});
