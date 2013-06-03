@@ -49,7 +49,7 @@ TopologyTreeSourceCreator = function(options) {
 				}).done(function(data, textStatus, jqXHR) {
 					elementNode.status = data.status;
 					elementNode.parents = element.topologicalParents;
-					elementNode.monitorStatus = getAdditionalStatus(data.monitorStatus);
+					elementNode.monitorStatus = data.monitorStatus;
 					elementNode.message = data.message;
 					deferred.resolve(elementNode);
 				}).fail(
@@ -118,23 +118,6 @@ TopologyTreeSourceCreator = function(options) {
 		buildTreeInMemory(initialRootNodes);
 	}
 
-	function getAdditionalStatus(additionalStatus) {
-		// At least one Topological Parent, push parents into the element's
-		// 'parents' array
-		var additionalStatusArray = [];
-		if (additionalStatus.length != 0) {
-			$.each(additionalStatus, function(j, additionalElementStatus) {
-				additionalStatusArray.push({
-					id : additionalElementStatus.id,
-					name : additionalElementStatus.name,
-					status : additionalElementStatus.status,
-
-				});
-			});
-		}
-		return additionalStatusArray;
-	}
-
 	function createRoot() {
 		var root = {};
 		root.elementId = 0;
@@ -152,41 +135,30 @@ TopologyTreeSourceCreator = function(options) {
 		var root = createRoot();
 		var showFullTree = $('input[name="showEntireTree"]').is(':checked');
 		$.each(availableElementsForTree, function(i, currentNode) {
-			if (isCurrentNodeRootNode(currentNode, rootNodes)) {
+			if ($.inArray(currentNode.id, rootNodes) > -1) {
 				var childNode = getNodeOnTree(elementsOnTree, currentNode);
 				elementsOnTree[childNode.elementId] = childNode;
 				root.children.push(childNode);
 			}
 			if (currentNode.status != "OK" || showFullTree) {
-				createBranch(availableElementsForTree, elementsOnTree, currentNode, root);
+				createBranch(elementsOnTree, currentNode, root);
 			}
 		});
 		renderTree(decompressTree(root));
-	}
-
-	function isCurrentNodeRootNode(currentNode, rootNodes) {
-		return $.inArray(currentNode.id, rootNodes) > -1;
 	}
 
 	function populateTopLevelParentSelect() {
 		var parents = getNodesWithChildren();
 		var topLevelParentSelector = $("#selectTopLevelParent").empty().prop('disabled', !canEdit);
 		$.each(parents, function(i, parent) {
-			topLevelParentSelector.append(
-					"<option value=" + parent.id + " " + shouldBeSelected(parent) + ">" + parent.name + "</option>");
+			$("<option></option>").val(parent.id).text(parent.name).prop("selected", $.inArray(parent.id, initialRootNodes) > -1)
+					.appendTo(topLevelParentSelector);
 		});
 		if (topLevelParentSelector.hasClass("chzn-done")) {
 			topLevelParentSelector.trigger("liszt:updated");
 		} else {
 			topLevelParentSelector.chosen().change(updateRootNodes);
 		}
-	}
-
-	function shouldBeSelected(parent) {
-		if (isCurrentNodeRootNode(parent, initialRootNodes)) {
-			return "selected='selected'";
-		}
-		return "";
 	}
 
 	function updateRootNodes(event) {
@@ -228,7 +200,7 @@ TopologyTreeSourceCreator = function(options) {
 		return jQuery.extend(true, {}, source);
 	}
 
-	function createBranch(availableElementsForTree, elementsOnTree, node, root) {
+	function createBranch(elementsOnTree, node, root) {
 		var childNode = getNodeOnTree(elementsOnTree, node);
 		elementsOnTree[childNode.elementId] = childNode;
 
@@ -236,7 +208,7 @@ TopologyTreeSourceCreator = function(options) {
 			var parentOnTree = elementsOnTree[parent.id];
 			if (typeof parentOnTree == "undefined") {
 				var parentNode = availableElementsForTree[parent.id];
-				parentOnTree = createBranch(availableElementsForTree, elementsOnTree, parentNode, root);
+				parentOnTree = createBranch(elementsOnTree, parentNode, root);
 			}
 			if (!isAlreadyDependent(parentOnTree, childNode)) {
 				parentOnTree.children.push(childNode);
