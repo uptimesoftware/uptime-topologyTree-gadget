@@ -236,49 +236,14 @@ TopologyTreeSourceCreator = function(options) {
 			var parentOnTree = elementsOnTree[parent.id];
 			if (typeof parentOnTree == "undefined") {
 				var parentNode = availableElementsForTree[parent.id];
-				if (isParentNodeAvailableForTree(parentNode)) {
-					parentOnTree = createBranch(availableElementsForTree, elementsOnTree, parentNode, root);
-				} else {
-					parentOnTree = buildInvisibleParentNode(parent, elementsOnTree, root);
-
-				}
-
+				parentOnTree = createBranch(availableElementsForTree, elementsOnTree, parentNode, root);
 			}
-
-			if (isParentExist(parentOnTree) && !isAlreadyDependent(parentOnTree, childNode)) {
+			if (!isAlreadyDependent(parentOnTree, childNode)) {
 				parentOnTree.children.push(childNode);
 			}
 		});
 
 		return childNode;
-	}
-
-	function buildInvisibleParentNode(node, elementsOnTree, root) {
-		if (typeof elementsOnTree[node.id] != "undefined") {
-			var parentOnTree = elementsOnTree[node.id];
-			elementsOnTree[parentOnTree.elementId] = parentOnTree;
-			root.children.push(parentOnTree);
-			return parentOnTree;
-		}
-		var newNode = {};
-		newNode.elementId = node.id;
-		newNode.elementName = node.name;
-		newNode.elementStatus = node.status;
-		newNode.statusMessage = "You don't have permission to view this element";
-		newNode.monitorStatus = [];
-		newNode.elementType = "Invisible";
-		newNode.children = [];
-		elementsOnTree[newNode.elementId] = newNode;
-		root.children.push(newNode);
-		return newNode;
-	}
-
-	function isParentNodeAvailableForTree(parentNode) {
-		return parentNode != null;
-	}
-
-	function isParentExist(parent) {
-		return typeof parent != "undefined";
 	}
 
 	function isAlreadyDependent(parent, child) {
