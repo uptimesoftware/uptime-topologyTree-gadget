@@ -20,7 +20,7 @@ TopologyTreeBuilder = function() {
 	var vis = d3.select("#topoTree").append("svg:svg").attr("width", visDimensions.width).attr("height", visDimensions.height)
 			.append("svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
 	vis.append("svg:text").style("opacity", 1e-6);
-	
+
 	this.resize = function(dimensions) {
 
 		visDimensions = dimensions;
@@ -103,25 +103,23 @@ TopologyTreeBuilder = function() {
 	}
 
 	function getFillColour(d) {
-		var elementStatus = d.elementStatus;
 		if (d.elementId == 0) {
 			return "black";
 		}
-		if (elementStatus == "OK") {
+		if (d.elementStatus == "OK") {
 			return "#67B10B";
 		}
-		if (elementStatus == "MAINT") {
+		if (d.elementStatus == "MAINT") {
 			return "#555B98";
 		}
-		if (elementStatus == "CRIT") {
+		if (d.elementStatus == "CRIT") {
 			return "#B61211";
 		}
-		if (elementStatus == "WARN") {
+		if (d.elementStatus == "WARN") {
 			return "#DAD60B";
 		}
-		if (elementStatus == "UNKNOWN") {
-			return "#E6E6E6";
-		}
+		// default unknown
+		return "#E6E6E6";
 	}
 
 	function getStrokeWidthBasedOnChildren(node) {
@@ -137,13 +135,17 @@ TopologyTreeBuilder = function() {
 	}
 
 	function goToElement(node) {
-		var url = uptimeGadget.getElementUrls(node.elementId, node.elementName);
-		if (node.elementType != "Invisible") {
-			window.top.location.href = url.services;
+		if (node.elementId == 0) {
+			return;
 		}
+		var url = uptimeGadget.getElementUrls(node.elementId, node.elementName);
+		window.top.location.href = url.services;
 	}
 
 	function showStatusDetail(d) {
+		if (d.elementId == 0) {
+			return;
+		}
 		var text = d3.select(this).select("text");
 		text.style("fill-opacity", getTextOpacity(d));
 
@@ -207,7 +209,7 @@ TopologyTreeBuilder = function() {
 	}
 
 	function getTextOpacity(d) {
-		if (d.elementType == "Invisible" && d.isCollide == false) {
+		if (d.elementId == 0 && d.isCollide == false) {
 			return 0.5;
 		}
 		if (d.children || d.isCollide == false) {
