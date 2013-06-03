@@ -9,9 +9,9 @@ TopologyTreeBuilder = function() {
 
 	var currNodeId = 0;
 	var tree = d3.layout.tree().size([ treeDimensions.height, treeDimensions.width ]).children(function(d) {
-		return d.dependents;
+		return d.children;
 	}).sort(function(a, b) {
-		return naturalSort(a.entityName, b.entityName);
+		return naturalSort(a.elementName, b.elementName);
 	});
 
 	var diagonal = d3.svg.diagonal().projection(function(d) {
@@ -103,23 +103,23 @@ TopologyTreeBuilder = function() {
 	}
 
 	function getFillColour(d) {
-		var entityStatus = d.entityStatus;
-		if (d.entityId == 0) {
+		var elementStatus = d.elementStatus;
+		if (d.elementId == 0) {
 			return "black";
 		}
-		if (entityStatus == "OK") {
+		if (elementStatus == "OK") {
 			return "#67B10B";
 		}
-		if (entityStatus == "MAINT") {
+		if (elementStatus == "MAINT") {
 			return "#555B98";
 		}
-		if (entityStatus == "CRIT") {
+		if (elementStatus == "CRIT") {
 			return "#B61211";
 		}
-		if (entityStatus == "WARN") {
+		if (elementStatus == "WARN") {
 			return "#DAD60B";
 		}
-		if (entityStatus == "UNKNOWN") {
+		if (elementStatus == "UNKNOWN") {
 			return "#E6E6E6";
 		}
 	}
@@ -137,8 +137,8 @@ TopologyTreeBuilder = function() {
 	}
 
 	function goToElement(node) {
-		var url = uptimeGadget.getElementUrls(node.entityId, node.entityName);
-		if (node.type != "Invisible") {
+		var url = uptimeGadget.getElementUrls(node.elementId, node.elementName);
+		if (node.elementType != "Invisible") {
 			window.top.location.href = url.services;
 		}
 	}
@@ -162,10 +162,10 @@ TopologyTreeBuilder = function() {
 
 	function constructMessage(d) {
 		var message = "<ul class='tooltipDetail'>";
-		message += "<li><div class='tooltipDetailTitle'>Element Name:</div><div>" + d.entityName + "</div></li>";
-		message += "<li><div class='tooltipDetailTitle'>Element Status:</div><div>" + d.entityStatus + "</div></li>";
+		message += "<li><div class='tooltipDetailTitle'>Element Name:</div><div>" + d.elementName + "</div></li>";
+		message += "<li><div class='tooltipDetailTitle'>Element Status:</div><div>" + d.elementStatus + "</div></li>";
 		message += "<li><div class='tooltipDetailTitle'>Status Message:</div><div>" + d.statusMessage + "</div></li>";
-		message += "<li><div class='tooltipDetailTitle'>Element Type:</div><div>" + d.type + "</div></li>";
+		message += "<li><div class='tooltipDetailTitle'>Element Type:</div><div>" + d.elementType + "</div></li>";
 		if (d.monitorStatus != 0) {
 			message += "<hr style='clear:both'/>";
 			$.each(d.monitorStatus, function(j, monitorStatus) {
@@ -207,7 +207,7 @@ TopologyTreeBuilder = function() {
 	}
 
 	function getTextOpacity(d) {
-		if (d.type == "Invisible" && d.isCollide == false) {
+		if (d.elementType == "Invisible" && d.isCollide == false) {
 			return 0.5;
 		}
 		if (d.children || d.isCollide == false) {
@@ -255,7 +255,7 @@ TopologyTreeBuilder = function() {
 		nodeEnter.append("svg:circle").attr("r", 1e-6).style("fill", getFillColour).on("click", nodeClickHandler);
 
 		nodeEnter.append("svg:text").attr("dy", ".35em").text(function(d) {
-			return d.entityName;
+			return d.elementName;
 		}).style("fill-opacity", 1e-6).on("click", goToElement);
 	}
 
@@ -296,11 +296,9 @@ TopologyTreeBuilder = function() {
 	// Toggle children.
 	function toggle(d) {
 		if (d.children) {
-			d._children = d.dependents;
+			d._children = d.children;
 			d.children = null;
-			d.dependents = null;
 		} else {
-			d.dependents = d._children;
 			d.children = d._children;
 			d._children = null;
 		}
@@ -326,7 +324,7 @@ TopologyTreeBuilder = function() {
 
 				var siblings = d.parent.children;
 				for ( var i = 0; i < siblings.length; i++) {
-					if (d.entityId != siblings[i].entityId) {
+					if (d.elementId != siblings[i].elementId) {
 						if (isCollide(d, siblings[i])) {
 							d.isCollide = true;
 						}

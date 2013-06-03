@@ -91,13 +91,13 @@ TopologyTreeSourceCreator = function(options) {
 
 	function createNodeOnTree(currentNode) {
 		var newNode = {};
-		newNode.entityId = currentNode.id;
-		newNode.entityName = currentNode.name;
-		newNode.entityStatus = currentNode.status;
+		newNode.elementId = currentNode.id;
+		newNode.elementName = currentNode.name;
+		newNode.elementStatus = currentNode.status;
 		newNode.statusMessage = currentNode.message;
 		newNode.monitorStatus = currentNode.monitorStatus;
-		newNode.type = currentNode.typeSubtypeName;
-		newNode.dependents = [];
+		newNode.elementType = currentNode.typeSubtypeName;
+		newNode.children = [];
 		return newNode;
 	}
 
@@ -137,13 +137,13 @@ TopologyTreeSourceCreator = function(options) {
 
 	function createRoot() {
 		var root = {};
-		root.entityId = 0;
-		root.entityName = "up.time";
-		root.dependents = [];
-		root.entityStatus = "OK";
-		root.type = "Invisible";
-		root.statusMessage = "This is always the root of any topology tree";
+		root.elementId = 0;
+		root.elementName = "up.time";
+		root.elementStatus = "OK";
 		root.monitorStatus = [];
+		root.statusMessage = "This is always the root of any topology tree";
+		root.elementType = "Invisible";
+		root.children = [];
 		return root;
 	}
 
@@ -154,8 +154,8 @@ TopologyTreeSourceCreator = function(options) {
 		$.each(availableElementsForTree, function(i, currentNode) {
 			if (isCurrentNodeRootNode(currentNode, rootNodes)) {
 				var childNode = getNodeOnTree(elementsOnTree, currentNode);
-				elementsOnTree[childNode.entityId] = childNode;
-				root.dependents.push(childNode);
+				elementsOnTree[childNode.elementId] = childNode;
+				root.children.push(childNode);
 			}
 			if (currentNode.status != "OK" || showFullTree) {
 				createBranch(availableElementsForTree, elementsOnTree, currentNode, root);
@@ -230,7 +230,7 @@ TopologyTreeSourceCreator = function(options) {
 
 	function createBranch(availableElementsForTree, elementsOnTree, node, root) {
 		var childNode = getNodeOnTree(elementsOnTree, node);
-		elementsOnTree[childNode.entityId] = childNode;
+		elementsOnTree[childNode.elementId] = childNode;
 
 		$.each(node.parents, function(i, parent) {
 			var parentOnTree = elementsOnTree[parent.id];
@@ -246,7 +246,7 @@ TopologyTreeSourceCreator = function(options) {
 			}
 
 			if (isParentExist(parentOnTree) && !isAlreadyDependent(parentOnTree, childNode)) {
-				parentOnTree.dependents.push(childNode);
+				parentOnTree.children.push(childNode);
 			}
 		});
 
@@ -256,20 +256,20 @@ TopologyTreeSourceCreator = function(options) {
 	function buildInvisibleParentNode(node, elementsOnTree, root) {
 		if (typeof elementsOnTree[node.id] != "undefined") {
 			var parentOnTree = elementsOnTree[node.id];
-			elementsOnTree[parentOnTree.entityId] = parentOnTree;
-			root.dependents.push(parentOnTree);
+			elementsOnTree[parentOnTree.elementId] = parentOnTree;
+			root.children.push(parentOnTree);
 			return parentOnTree;
 		}
 		var newNode = {};
-		newNode.entityId = node.id;
-		newNode.entityName = node.name;
-		newNode.entityStatus = node.status;
+		newNode.elementId = node.id;
+		newNode.elementName = node.name;
+		newNode.elementStatus = node.status;
 		newNode.statusMessage = "You don't have permission to view this element";
 		newNode.monitorStatus = [];
-		newNode.type = "Invisible";
-		newNode.dependents = [];
-		elementsOnTree[newNode.entityId] = newNode;
-		root.dependents.push(newNode);
+		newNode.elementType = "Invisible";
+		newNode.children = [];
+		elementsOnTree[newNode.elementId] = newNode;
+		root.children.push(newNode);
 		return newNode;
 	}
 
@@ -282,8 +282,8 @@ TopologyTreeSourceCreator = function(options) {
 	}
 
 	function isAlreadyDependent(parent, child) {
-		var matchedElements = $.grep(parent.dependents, function(e) {
-			return e.entityId == child.entityId;
+		var matchedElements = $.grep(parent.children, function(e) {
+			return e.elementId == child.elementId;
 		});
 		return matchedElements != 0;
 	}
