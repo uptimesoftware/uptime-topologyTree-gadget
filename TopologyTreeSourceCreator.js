@@ -6,7 +6,7 @@ TopologyTreeSourceCreator = function(options) {
 		throw new TypeError("renderTree argument must be a function");
 	}
 	if (typeof options.displayError != "function") {
-		throw new TypeError("renderTree argument must be a function");
+		throw new TypeError("displayError argument must be a function");
 	}
 
 	var renderTree = options.renderTree;
