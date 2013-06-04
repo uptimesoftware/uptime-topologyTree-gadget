@@ -52,8 +52,15 @@ TopologyTreeSourceCreator = function(options) {
 					elementData.status = data.status;
 					elementData.parents = element.topologicalParents;
 					elementData.hasChildren = element.topologicalChildren.length > 0;
-					// TODO: trim down to name/status?
-					elementData.monitorStatus = data.monitorStatus;
+					elementData.monitorStatus = $.map(data.monitorStatus, function(v, k) {
+						return v.isHidden ? undefined : {
+							id : v.id,
+							name : v.name,
+							status : v.status
+						};
+					}).sort(function(a, b) {
+						return naturalSort(a.name, b.name);
+					});
 					elementData.message = data.message;
 					deferred.resolve(elementData);
 				}).fail(
