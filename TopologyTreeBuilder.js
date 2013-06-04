@@ -260,20 +260,15 @@ TopologyTreeBuilder = function() {
 		nodeUpdate.select("circle").attr("r", getStrokeWidthBasedOnChildren).style("fill", getFillColor).style("stroke",
 				"midnightblue");
 
-		nodeUpdate
-				.select("text")
-				.attr(
-						"text-anchor",
-						function(d) {
-							return (!d.hasChildren || d.expansion == "none" || (d.expansion != "full" && d.branches.length == 0)) ? "start"
-									: "end";
-						})
-				.attr(
-						"x",
-						function(d) {
-							return (!d.hasChildren || d.expansion == "none" || (d.expansion != "full" && d.branches.length == 0)) ? textPositionOffset
-									: -textPositionOffset;
-						}).style("fill-opacity", getTextOpacity);
+		nodeUpdate.select("text").attr("text-anchor", function(d) {
+			return hasVisibleChildren(d) ? "end" : "start";
+		}).attr("x", function(d) {
+			return hasVisibleChildren(d) ? -textPositionOffset : textPositionOffset;
+		}).style("fill-opacity", getTextOpacity);
+	}
+
+	function hasVisibleChildren(node) {
+		return node.hasChildren && (node.expansion == "full" || (node.expansion != "none" && node.branches.length > 0));
 	}
 
 	function createNewNodes(node, source, textPositionOffset) {
