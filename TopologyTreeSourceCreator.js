@@ -101,7 +101,9 @@ TopologyTreeSourceCreator = function(options) {
 		node.statusMessage = element.message;
 		node.monitorStatus = element.monitorStatus;
 		node.elementType = element.typeSubtypeName;
-		node.children = [];
+		node.leaves = {};
+		node.branches = {};
+		node.hasChildren = element.hasChildren;
 		return node;
 	}
 
@@ -113,8 +115,18 @@ TopologyTreeSourceCreator = function(options) {
 		root.statusMessage = "";
 		root.monitorStatus = [];
 		root.elementType = "";
-		root.children = [];
+		root.leaves = {};
+		root.branches = {};
+		root.hasChildren = true;
 		return root;
+	}
+
+	function addChildNode(node, childNode) {
+		if (childNode.hasChildren) {
+			node.branches[childNode.elementId] = childNode;
+		} else {
+			node.leaves[childNode.elementId] = childNode;
+		}
 	}
 
 	function createRoot(treeLookup, topLevelParentIds) {
@@ -125,10 +137,10 @@ TopologyTreeSourceCreator = function(options) {
 		if (topLevelParentIds.length == 1) {
 			root = treeLookup[topLevelParentIds[0]] = createTreeNode(elementLookup[topLevelParentIds[0]]);
 		} else {
-			root = createRootPlaceholder();
+			root = treeLookup[0] = createRootPlaceholder();
 			$.each(topLevelParentIds, function(i, topLevelParentId) {
 				var node = treeLookup[topLevelParentId] = createTreeNode(elementLookup[topLevelParentId]);
-				root.children.push(node);
+				addChildNode(root, node);
 			});
 		}
 		return root;
@@ -139,6 +151,14 @@ TopologyTreeSourceCreator = function(options) {
 		var root = createRoot(treeLookup, topLevelParentIds);
 		$.each(elementLookup, function(i, element) {
 			createBranch(treeLookup, element, root);
+		});
+		$.each(treeLookup, function(i, node) {
+			node.leaves = $.map(node.leaves, function(v, k) {
+				return v;
+			});
+			node.branches = $.map(node.branches, function(v, k) {
+				return v;
+			});
 		});
 		renderTree(decompressTree(root));
 	}
@@ -190,18 +210,9 @@ TopologyTreeSourceCreator = function(options) {
 			if (typeof parentNode == "undefined") {
 				parentNode = createBranch(treeLookup, elementLookup[parent.id], root);
 			}
-			if (!isAlreadyDependent(parentNode, node)) {
-				parentNode.children.push(node);
-			}
+			addChildNode(parentNode, node);
 		});
 		return node;
-	}
-
-	function isAlreadyDependent(parent, child) {
-		var matchedElements = $.grep(parent.children, function(e) {
-			return e.elementId == child.elementId;
-		});
-		return matchedElements != 0;
 	}
 
 };
