@@ -45,7 +45,6 @@ TopologyTreeBuilder = function() {
 			disableTreeControls();
 		}
 		$("#inProgressBar").hide();
-		$("#showEntireTreeContainer").show();
 		$("#selectTopLevelParentContainer").show();
 		$("#tooltip").show();
 		topologyTreeInstance.updateTree(root);
@@ -94,7 +93,6 @@ TopologyTreeBuilder = function() {
 	}
 
 	function disableTreeControls() {
-		$("#showEntireTreeCheckbox").prop('disabled', true);
 		$("#selectTopLevelParent").prop('disabled', true);
 		$.each($("#selectTopLevelParent > option"), function(i, option) {
 			$(option).prop('disabled', true);

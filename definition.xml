@@ -18,8 +18,7 @@
 		<script src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>
 	</head>
 	<body>
-		<div id="showEntireTreeContainer"><input type="checkbox" id="showEntireTreeCheckbox" name="showEntireTree"><label for="showEntireTreeCheckbox">Show Full Topology</label></div>
-		<div id="selectTopLevelParentContainer"><select data-placeholder="Select root elements to display" multiple="true" id="selectTopLevelParent"></select></div>
+		<div id="selectTopLevelParentContainer"><select data-placeholder="Filter by topological parent" multiple="true" id="selectTopLevelParent"></select></div>
 		<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif" /></div>
 		<div id="error"></div>
 		<div id="tooltip" class="systemTooltip"></div>

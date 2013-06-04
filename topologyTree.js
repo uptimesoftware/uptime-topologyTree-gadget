@@ -17,10 +17,6 @@ $(function() {
 		topologyTreeBuilder.resize(dimensions);
 	});
 
-	$('input[name="showEntireTree"]').change(function() {
-		sourceBuilder.rebuildTreeWithCachedResults();
-	});
-	
 	function rebuildTree() {
 		sourceBuilder.getSource();
 		setTimeout(rebuildTree, rebuildInterval);

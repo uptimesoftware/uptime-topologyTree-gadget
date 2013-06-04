@@ -3,11 +3,6 @@ div {
 	font-size: 9px;
 }
 
-#showEntireTreeContainer {
-	float: right;
-	display: none;
-}
-
 #selectTopLevelParentContainer {
 	float: right;
 	width: 500px;

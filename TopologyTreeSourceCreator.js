@@ -13,22 +13,28 @@ TopologyTreeSourceCreator = function(options) {
 	var displayError = options.displayError;
 
 	var elementLookup = {};
+	var elementsWithNoParents = [];
+	var elementsWithChildren = [];
 	var canEdit = uptimeGadget.isOwner();
 
 	function initializeAndBuildTree(userSettings, elements) {
 		var settings = $.extend({
-			topLevelParentIds : [],
-			showFullTree : false
+			topLevelParentIds : []
 		}, userSettings);
 		elementLookup = {};
+		elementsWithNoParents = [];
+		elementsWithChildren = [];
 		$.each(elements, function(i, element) {
 			elementLookup[element.id] = element;
+			if (element.parents.length == 0) {
+				elementsWithNoParents.push(element.id);
+			}
+			if (element.hasChildren) {
+				elementsWithChildren.push(element.id);
+			}
 		});
-		var showFullTreeCheckbox = $('input[name="showEntireTree"]');
-		showFullTreeCheckbox.prop('checked', settings.showFullTree);
-		showFullTreeCheckbox.prop('disabled', !canEdit);
 		populateTopLevelParentSelect(settings.topLevelParentIds);
-		buildTree(settings.topLevelParentIds, settings.showFullTree);
+		buildTree(settings.topLevelParentIds);
 	}
 
 	function getTopologicalElementStatuses(elements) {
@@ -45,6 +51,7 @@ TopologyTreeSourceCreator = function(options) {
 				}).done(function(data, textStatus, jqXHR) {
 					elementData.status = data.status;
 					elementData.parents = element.topologicalParents;
+					elementData.hasChildren = element.topologicalChildren.length > 0;
 					// TODO: trim down to name/status?
 					elementData.monitorStatus = data.monitorStatus;
 					elementData.message = data.message;
@@ -112,9 +119,7 @@ TopologyTreeSourceCreator = function(options) {
 
 	function createRoot(treeLookup, topLevelParentIds) {
 		if (topLevelParentIds.length == 0) {
-			topLevelParentIds = $.map(getElementsWithNoParents(), function(v, k) {
-				return v.id;
-			});
+			topLevelParentIds = elementsWithNoParents;
 		}
 		var root;
 		if (topLevelParentIds.length == 1) {
@@ -129,19 +134,21 @@ TopologyTreeSourceCreator = function(options) {
 		return root;
 	}
 
-	function buildTree(topLevelParentIds, showFullTree) {
+	function buildTree(topLevelParentIds) {
 		var treeLookup = {};
 		var root = createRoot(treeLookup, topLevelParentIds);
 		$.each(elementLookup, function(i, element) {
-			if (element.status != "OK" || showFullTree) {
-				createBranch(treeLookup, element, root);
-			}
+			createBranch(treeLookup, element, root);
 		});
 		renderTree(decompressTree(root));
 	}
 
 	function populateTopLevelParentSelect(selectedTopLevelParentIds) {
-		var parents = getElementsWithChildren();
+		var parents = $.map(elementsWithChildren, function(v, k) {
+			return elementLookup[v];
+		}).sort(function(a, b) {
+			return naturalSort(a.name, b.name);
+		});
 		var topLevelParentSelector = $("#selectTopLevelParent").empty().prop('disabled', !canEdit);
 		$.each(parents, function(i, parent) {
 			$("<option></option>").val(parent.id).text(parent.name).prop("selected",
@@ -162,35 +169,11 @@ TopologyTreeSourceCreator = function(options) {
 				topLevelParentIds.push(parseInt(selectedTopLevelParentId));
 			});
 		}
-		var showFullTree = $('input[name="showEntireTree"]').is(':checked');
-		buildTree(topLevelParentIds, showFullTree);
+		buildTree(topLevelParentIds);
 		var settings = {
-			topLevelParentIds : topLevelParentIds,
-			showFullTree : showFullTree
+			topLevelParentIds : topLevelParentIds
 		};
 		uptimeGadget.saveSettings(settings);
-	}
-
-	function getElementsWithNoParents() {
-		var elements = [];
-		$.each(elementLookup, function(i, element) {
-			if (element.parents.length == 0) {
-				elements.push(element);
-			}
-		});
-		return elements;
-	}
-
-	function getElementsWithChildren() {
-		var elementWithChildrenLookup = {};
-		$.each(elementLookup, function(i, element) {
-			$.each(element.parents, function(j, parent) {
-				elementWithChildrenLookup[parent.id] = parent;
-			});
-		});
-		return $.map(elementWithChildrenLookup, function(v, k) {
-			return v;
-		});
 	}
 
 	function decompressTree(source) {
