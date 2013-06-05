@@ -15,7 +15,6 @@ TopologyTreeSourceCreator = function(options) {
 	var elementLookup = {};
 	var elementsWithNoParents = [];
 	var elementsWithChildren = [];
-	var canEdit = uptimeGadget.isOwner();
 
 	function initializeAndBuildTree(userSettings, elements) {
 		var settings = $.extend({
@@ -176,7 +175,7 @@ TopologyTreeSourceCreator = function(options) {
 		}).sort(function(a, b) {
 			return naturalSort(a.name, b.name);
 		});
-		var topLevelParentSelector = $("#selectTopLevelParent").empty().prop('disabled', !canEdit);
+		var topLevelParentSelector = $("#selectTopLevelParent").empty().prop('disabled', !uptimeGadget.isOwner());
 		$.each(parents, function(i, parent) {
 			$("<option></option>").val(parent.id).text(parent.name).prop("selected",
 					$.inArray(parent.id, selectedTopLevelParentIds) > -1).appendTo(topLevelParentSelector);

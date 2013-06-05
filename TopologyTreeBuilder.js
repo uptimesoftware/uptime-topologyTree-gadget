@@ -39,9 +39,6 @@ TopologyTreeBuilder = function() {
 		root = source;
 		root.x0 = treeDimensions.height / 2;
 		root.y0 = 10;
-		if (!uptimeGadget.isOwner()) {
-			disableTreeControls();
-		}
 		$("#inProgressBar").hide();
 		$("#selectTopLevelParentContainer").show();
 		$("#tooltip").show();
@@ -88,14 +85,6 @@ TopologyTreeBuilder = function() {
 		var w = dimensions.width - treeMargins[0] - treeMargins[2];
 		var h = dimensions.height - treeMargins[1] - treeMargins[3];
 		return new UPTIME.pub.gadgets.Dimensions(w, h);
-	}
-
-	function disableTreeControls() {
-		$("#selectTopLevelParent").prop('disabled', true);
-		$.each($("#selectTopLevelParent > option"), function(i, option) {
-			$(option).prop('disabled', true);
-		});
-		$("#selectTopLevelParent").trigger("liszt:updated");
 	}
 
 	function getChildren(node) {
