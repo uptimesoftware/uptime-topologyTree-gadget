@@ -1,5 +1,5 @@
 TopologyTreeBuilder = function() {
-	var treeMargins = [ 90, 20, 200, 70 ];
+	var treeMargins = [ 96, 24, 126, 64 ];
 	var visDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
 	var treeDimensions = toTreeDimensions(visDimensions);
 
@@ -242,7 +242,7 @@ TopologyTreeBuilder = function() {
 		updatedNodes.select("text").attr("text-anchor", function(node) {
 			return hasVisibleChildren(node) ? "end" : "start";
 		}).attr("x", function(node) {
-			return hasVisibleChildren(node) ? -20 : 20;
+			return hasVisibleChildren(node) ? -12 : 12;
 		}).style("fill-opacity", getTextOpacity);
 		visibleLinks.transition().duration(treeTransitionDuration).attr("d", d3.svg.diagonal().projection(projectYX));
 	}
