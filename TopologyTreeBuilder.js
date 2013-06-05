@@ -139,7 +139,7 @@ TopologyTreeBuilder = function() {
 			return;
 		}
 		delete node.children; // need to do this so d3 doesn't keep copies
-								// everywhere
+		// everywhere
 		if (node.expansion == "full") {
 			node.expansion = "none";
 		} else if (node.expansion == "none") {
@@ -180,17 +180,17 @@ TopologyTreeBuilder = function() {
 
 	function constructMessage(node) {
 		var message = '<ul class="tooltipDetail">';
-		message += '<li><div class="tooltipDetailTitle">Element Name:</div><div>' + node.elementName + '</div></li>';
-		message += '<li><div class="tooltipDetailTitle">Element Status:</div><div>' + node.elementStatus + '</div></li>';
+		message += '<li><span class="tooltipDetailTitle">Element Name:</span><span>' + node.elementName + '</span></li>';
+		message += '<li><span class="tooltipDetailTitle">Element Status:</span><span>' + node.elementStatus + '</span></li>';
 		if (node.statusMessage) {
-			message += '<li><div class="tooltipDetailTitle">Status Message:</div><div>' + node.statusMessage + '</div></li>';
+			message += '<li><span class="tooltipDetailTitle">Status Message:</span><span>' + node.statusMessage + '</span></li>';
 		}
-		message += '<li><div class="tooltipDetailTitle">Element Type:</div><div>' + node.elementType + '</div></li>';
+		message += '<li><span class="tooltipDetailTitle">Element Type:</span><span>' + node.elementType + '</span></li>';
 		if (node.monitorStatus.length > 0) {
-			message += '<hr style="clear:both"/>';
+			message += '<li class="separator"></li>';
 			$.each(node.monitorStatus, function(i, monitorStatus) {
-				message += '<li><div class="tooltipDetailTitle">' + monitorStatus.name + ':</div><div>' + monitorStatus.status
-						+ '</div></li>';
+				message += '<li><span class="tooltipDetailTitle">' + monitorStatus.name + ':</span><span>' + monitorStatus.status
+						+ '</span></li>';
 			});
 		}
 		message += '</ul>';
@@ -203,7 +203,7 @@ TopologyTreeBuilder = function() {
 		text.style("fill-opacity", getTextOpacity(node));
 		var div = d3.select("#tooltip");
 		div.transition().duration(tooltipTransitionDuration).style("opacity", 1e-6);
-		vis.selectAll(".link").style("stroke", "lightgrey");
+		vis.selectAll(".link").style("stroke", null);
 	}
 
 	function highlightPath(node) {
