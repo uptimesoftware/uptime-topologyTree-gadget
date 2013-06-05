@@ -3,6 +3,9 @@ TopologyTreeBuilder = function() {
 	var visDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
 	var treeDimensions = toTreeDimensions(visDimensions);
 
+	var treeTransitionDuration = 500;
+	var tooltipTransitionDuration = 200;
+
 	var root = null;
 
 	var topologyTreeInstance = this;
@@ -48,7 +51,6 @@ TopologyTreeBuilder = function() {
 	this.updateTree = function(source) {
 
 		var textPositionOffset = 20;
-		var duration = d3.event && d3.event.altKey ? 5000 : 500;
 
 		// Compute the new tree layout.
 		var nodes = tree.nodes(root).reverse();
@@ -59,13 +61,13 @@ TopologyTreeBuilder = function() {
 			return d.id || (d.id = ++currNodeId);
 		});
 
-		renderLinks(nodes, source, duration);
+		renderLinks(nodes, source);
 
 		createNewNodes(node, source, textPositionOffset);
 
-		updateExistingNodes(node, duration, textPositionOffset);
+		updateExistingNodes(node, textPositionOffset);
 
-		removeExitingNodes(node, duration, source);
+		removeExitingNodes(node, source);
 
 		// Stash the old positions for transition.
 		nodes.forEach(function(d) {
@@ -165,7 +167,7 @@ TopologyTreeBuilder = function() {
 	function showStatusMessage(node) {
 		var div = d3.select("#tooltip");
 
-		div.transition().duration(200).style("opacity", 1).style("border-color", getFillColor(node));
+		div.transition().duration(tooltipTransitionDuration).style("opacity", 1).style("border-color", getFillColor(node));
 
 		div.html(constructMessage(node)).style("left", (d3.event.pageX + 10) + "px").style("top", (d3.event.pageY - 28) + "px");
 	}
@@ -194,7 +196,7 @@ TopologyTreeBuilder = function() {
 		var text = d3.select(this).select("text");
 		text.style("fill-opacity", getTextOpacity(node));
 		var div = d3.select("#tooltip");
-		div.transition().duration(200).style("opacity", 1e-6);
+		div.transition().duration(tooltipTransitionDuration).style("opacity", 1e-6);
 		vis.selectAll(".link").style("stroke", "lightgrey");
 	}
 
@@ -228,9 +230,9 @@ TopologyTreeBuilder = function() {
 		return 1e-6;
 	}
 
-	function removeExitingNodes(node, duration, source) {
+	function removeExitingNodes(node, source) {
 		// Transition exiting nodes to the parent's new position.
-		var nodeExit = node.exit().transition().duration(duration).attr("transform", function(d) {
+		var nodeExit = node.exit().transition().duration(treeTransitionDuration).attr("transform", function(d) {
 			return "translate(" + source.y + "," + source.x + ")";
 		}).remove();
 
@@ -240,9 +242,9 @@ TopologyTreeBuilder = function() {
 
 	}
 
-	function updateExistingNodes(node, duration, textPositionOffset) {
+	function updateExistingNodes(node, textPositionOffset) {
 		// Transition nodes to their new position.
-		var nodeUpdate = node.transition().duration(duration).attr("transform", function(d) {
+		var nodeUpdate = node.transition().duration(treeTransitionDuration).attr("transform", function(d) {
 			return "translate(" + d.y + "," + d.x + ")";
 		});
 
@@ -275,7 +277,7 @@ TopologyTreeBuilder = function() {
 		}).style("fill-opacity", 1e-6).on("click", redirectToElementProfilePage);
 	}
 
-	function renderLinks(nodes, source, duration) {
+	function renderLinks(nodes, source) {
 		// Update the links…
 		var link = vis.selectAll("path.link").data(tree.links(nodes), function(d) {
 			return d.target.id;
@@ -294,10 +296,10 @@ TopologyTreeBuilder = function() {
 		});
 
 		// Transition links to their new position.
-		link.transition().duration(duration).attr("d", diagonal);
+		link.transition().duration(treeTransitionDuration).attr("d", diagonal);
 
 		// Transition exiting nodes to the parent's new position.
-		link.exit().transition().duration(duration).attr("d", function(d) {
+		link.exit().transition().duration(treeTransitionDuration).attr("d", function(d) {
 			var o = {
 				x : source.x,
 				y : source.y
