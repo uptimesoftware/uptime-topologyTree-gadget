@@ -6,6 +6,21 @@ TopologyTreeBuilder = function() {
 	var treeTransitionDuration = 500;
 	var tooltipTransitionDuration = 200;
 
+	function translateYX(d) {
+		return "translate(" + d.y + "," + d.x + ")";
+	}
+
+	function projectYX(d) {
+		return [ d.y, d.x ];
+	}
+
+	function oldXY(d) {
+		return {
+			x : d.oldX,
+			y : d.oldY
+		};
+	}
+
 	var root = null;
 
 	var topologyTreeInstance = this;
@@ -15,12 +30,8 @@ TopologyTreeBuilder = function() {
 		return naturalSort(a.elementName, b.elementName);
 	});
 
-	var diagonal = d3.svg.diagonal().projection(function(d) {
-		return [ d.y, d.x ];
-	});
 	var vis = d3.select("#topoTree").append("svg:svg").attr("width", visDimensions.width).attr("height", visDimensions.height)
 			.append("svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
-	vis.append("svg:text").style("opacity", 1e-6);
 
 	this.resize = function(dimensions) {
 
@@ -40,39 +51,34 @@ TopologyTreeBuilder = function() {
 	this.buildTree = function(source) {
 
 		root = source;
-		root.x0 = treeDimensions.height / 2;
-		root.y0 = 10;
+		root.oldX = treeDimensions.height / 2;
+		root.oldY = 10;
 		$("#inProgressBar").hide();
 		$("#selectTopLevelParentContainer").show();
 		$("#tooltip").show();
 		topologyTreeInstance.updateTree(root);
 	};
 
-	this.updateTree = function(source) {
+	this.updateTree = function(actionNode) {
+		var treeNodes = tree.nodes(root).reverse();
 
-		// Compute the new tree layout.
-		var nodes = tree.nodes(root).reverse();
+		detectCollisions(treeNodes);
 
-		detectCollisions(nodes);
-
-		var node = vis.selectAll("g.node").data(nodes, function(d) {
-			return d.id || (d.id = ++currNodeId);
+		// select the visible nodes/links and make sure they have unique ids
+		var visibleNodes = vis.selectAll("g.node").data(treeNodes, function(node) {
+			return node.id || (node.id = ++currNodeId);
+		});
+		var visibleLinks = vis.selectAll("path.link").data(tree.links(treeNodes), function(link) {
+			return link.source.id + '.' + link.target.id;
 		});
 
-		renderLinks(nodes, source);
-
-		createNewNodes(node, source);
-
-		updateExistingNodes(node);
-
-		removeExitingNodes(node, source);
-
-		// Stash the old positions for transition.
-		nodes.forEach(function(d) {
-			d.x0 = d.x;
-			d.y0 = d.y;
+		createNewNodes(visibleNodes, visibleLinks, actionNode);
+		updateExistingNodes(visibleNodes, visibleLinks);
+		removeExitingNodes(visibleNodes, visibleLinks, actionNode);
+		treeNodes.forEach(function(node) {
+			node.oldX = node.x;
+			node.oldY = node.y;
 		});
-
 	};
 
 	this.displayError = function(message) {
@@ -128,10 +134,12 @@ TopologyTreeBuilder = function() {
 		return 4.5;
 	}
 
-	function nodeClickHandler(node) {
+	function expandContractNode(node) {
 		if (!node.hasChildren) {
 			return;
 		}
+		delete node.children; // need to do this so d3 doesn't keep copies
+								// everywhere
 		if (node.expansion == "full") {
 			node.expansion = "none";
 		} else if (node.expansion == "none") {
@@ -228,85 +236,41 @@ TopologyTreeBuilder = function() {
 		return 1e-6;
 	}
 
-	function removeExitingNodes(node, source) {
-		// Transition exiting nodes to the parent's new position.
-		var nodeExit = node.exit().transition().duration(treeTransitionDuration).attr("transform", function(d) {
-			return "translate(" + source.y + "," + source.x + ")";
+	function removeExitingNodes(visibleNodes, visibleLinks, actionNode) {
+		var removedNodes = visibleNodes.exit().transition().duration(treeTransitionDuration).attr("transform", function(node) {
+			return translateYX(actionNode);
 		}).remove();
-
-		nodeExit.select("circle").attr("r", 1e-6);
-
-		nodeExit.select("text").style("fill-opacity", 1e-6);
-
+		removedNodes.select("circle").attr("r", 1e-6);
+		removedNodes.select("text").style("fill-opacity", 1e-6);
+		visibleLinks.exit().transition().duration(treeTransitionDuration).attr("d",
+				d3.svg.diagonal().source(actionNode).target(actionNode).projection(projectYX)).remove();
 	}
 
-	function updateExistingNodes(node) {
-		// Transition nodes to their new position.
-		var nodeUpdate = node.transition().duration(treeTransitionDuration).attr("transform", function(d) {
-			return "translate(" + d.y + "," + d.x + ")";
-		});
-
-		nodeUpdate.select("circle").attr("r", getStrokeWidthBasedOnChildren).style("fill", getFillColor).style("stroke",
-				"midnightblue");
-
-		nodeUpdate.select("text").attr("text-anchor", function(d) {
-			return hasVisibleChildren(d) ? "end" : "start";
-		}).attr("x", function(d) {
-			return hasVisibleChildren(d) ? -20 : 20;
+	function updateExistingNodes(visibleNodes, visibleLinks) {
+		var updatedNodes = visibleNodes.transition().duration(treeTransitionDuration).attr("transform", translateYX);
+		updatedNodes.select("circle").attr("r", getStrokeWidthBasedOnChildren).style("fill", getFillColor);
+		updatedNodes.select("text").attr("text-anchor", function(node) {
+			return hasVisibleChildren(node) ? "end" : "start";
+		}).attr("x", function(node) {
+			return hasVisibleChildren(node) ? -20 : 20;
 		}).style("fill-opacity", getTextOpacity);
+		visibleLinks.transition().duration(treeTransitionDuration).attr("d", d3.svg.diagonal().projection(projectYX));
 	}
 
 	function hasVisibleChildren(node) {
 		return node.hasChildren && (node.expansion == "full" || (node.expansion != "none" && node.branches.length > 0));
 	}
 
-	function createNewNodes(node, source) {
-
-		// Enter any new nodes at the parent's previous position.
-
-		var nodeEnter = node.enter().append("svg:g").attr("class", "node").attr("transform", function(d) {
-			return "translate(" + source.y0 + "," + source.x0 + ")";
+	function createNewNodes(visibleNodes, visibleLinks, actionNode) {
+		var newNodes = visibleNodes.enter().append("svg:g").attr("class", "node").attr("transform", function(node) {
+			return translateYX(oldXY(actionNode));
 		}).on("mouseover", showStatusDetail).on("mouseout", hideStatusDetail);
-
-		nodeEnter.append("svg:circle").attr("r", 1e-6).style("fill", getFillColor).on("click", nodeClickHandler);
-
-		nodeEnter.append("svg:text").attr("dy", ".35em").text(function(d) {
-			return d.elementName;
+		newNodes.append("svg:circle").attr("r", 1e-6).on("click", expandContractNode);
+		newNodes.append("svg:text").attr("dy", ".35em").text(function(node) {
+			return node.elementName;
 		}).style("fill-opacity", 1e-6).on("click", redirectToElementProfilePage);
-	}
-
-	function renderLinks(nodes, source) {
-		// Update the links…
-		var link = vis.selectAll("path.link").data(tree.links(nodes), function(d) {
-			return d.target.id;
-		});
-
-		// Enter any new links at the parent's previous position.
-		link.enter().insert("svg:path", "g").attr("class", "link").attr("d", function(d) {
-			var o = {
-				x : source.x0,
-				y : source.y0
-			};
-			return diagonal({
-				source : o,
-				target : o
-			});
-		});
-
-		// Transition links to their new position.
-		link.transition().duration(treeTransitionDuration).attr("d", diagonal);
-
-		// Transition exiting nodes to the parent's new position.
-		link.exit().transition().duration(treeTransitionDuration).attr("d", function(d) {
-			var o = {
-				x : source.x,
-				y : source.y
-			};
-			return diagonal({
-				source : o,
-				target : o
-			});
-		}).remove();
+		visibleLinks.enter().insert("svg:path", "g").attr("class", "link").attr("d",
+				d3.svg.diagonal().source(oldXY(actionNode)).target(oldXY(actionNode)).projection(projectYX));
 	}
 
 	function isCollide(node, node_sibling) {
