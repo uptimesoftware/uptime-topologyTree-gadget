@@ -30,7 +30,7 @@ TopologyTreeBuilder = function() {
 		return naturalSort(a.elementName, b.elementName);
 	});
 
-	var vis = d3.select("#topoTree").append("svg:svg").attr("width", visDimensions.width).attr("height", visDimensions.height)
+	var vis = d3.select("#tree").append("svg:svg").attr("width", visDimensions.width).attr("height", visDimensions.height)
 			.append("svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
 
 	this.resize = function(dimensions) {
@@ -49,13 +49,9 @@ TopologyTreeBuilder = function() {
 	};
 
 	this.buildTree = function(source) {
-
 		root = source;
 		root.oldX = treeDimensions.height / 2;
 		root.oldY = 10;
-		$("#inProgressBar").hide();
-		$("#selectTopLevelParentContainer").show();
-		$("#tooltip").show();
 		topologyTreeInstance.updateTree(root);
 	};
 
@@ -79,12 +75,6 @@ TopologyTreeBuilder = function() {
 			node.oldX = node.x;
 			node.oldY = node.y;
 		});
-	};
-
-	this.displayError = function(message) {
-		$("#topoTree").hide();
-		$("#tooltip").hide();
-		$("#error").text(message).show();
 	};
 
 	function toTreeDimensions(dimensions) {

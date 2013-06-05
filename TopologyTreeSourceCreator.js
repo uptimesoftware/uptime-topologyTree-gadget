@@ -32,7 +32,7 @@ TopologyTreeSourceCreator = function(options) {
 				elementsWithChildren.push(element.id);
 			}
 		});
-		populateTopLevelParentSelect(settings.topLevelParentIds);
+		populateTopologicalParentFilter(settings.topLevelParentIds);
 		buildTree(settings.topLevelParentIds);
 	}
 
@@ -62,11 +62,9 @@ TopologyTreeSourceCreator = function(options) {
 					});
 					elementData.message = data.message;
 					deferred.resolve(elementData);
-				}).fail(
-						function(jqXHR, textStatus, errorThrown) {
-							deferred.reject("Unable to build Topology Tree. Failed to retrieve element status for "
-									+ element.name + ".");
-						});
+				}).fail(function(jqXHR, textStatus, errorThrown) {
+					deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
+				});
 				promises.push(deferred.promise);
 			}
 		});
@@ -80,7 +78,7 @@ TopologyTreeSourceCreator = function(options) {
 		}).done(function(data, textStatus, jqXHR) {
 			deferred.resolve(data);
 		}).fail(function(jqXHR, textStatus, errorThrown) {
-			deferred.reject("Error loading elements from up.time Controller.");
+			deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
 		});
 		return deferred.promise;
 	}
@@ -90,9 +88,7 @@ TopologyTreeSourceCreator = function(options) {
 			getElements().then(getTopologicalElementStatuses).then(function(elements) {
 				initializeAndBuildTree(settings, elements);
 			}, displayError);
-		}, function() {
-			displayError("Error loading Topology Tree settings.");
-		});
+		}, displayError);
 	};
 
 	this.rebuildTreeWithCachedResults = function() {
@@ -169,27 +165,27 @@ TopologyTreeSourceCreator = function(options) {
 		renderTree(decompressTree(root));
 	}
 
-	function populateTopLevelParentSelect(selectedTopLevelParentIds) {
+	function populateTopologicalParentFilter(selectedTopLevelParentIds) {
 		var parents = $.map(elementsWithChildren, function(v, k) {
 			return elementLookup[v];
 		}).sort(function(a, b) {
 			return naturalSort(a.name, b.name);
 		});
-		var topLevelParentSelector = $("#selectTopLevelParent").empty().prop('disabled', !uptimeGadget.isOwner());
+		var topologicalParentFilter = $("#topologicalParentFilter").empty().prop('disabled', !uptimeGadget.isOwner());
 		$.each(parents, function(i, parent) {
 			$("<option></option>").val(parent.id).text(parent.name).prop("selected",
-					$.inArray(parent.id, selectedTopLevelParentIds) > -1).appendTo(topLevelParentSelector);
+					$.inArray(parent.id, selectedTopLevelParentIds) > -1).appendTo(topologicalParentFilter);
 		});
-		if (topLevelParentSelector.hasClass("chzn-done")) {
-			topLevelParentSelector.trigger("liszt:updated");
+		if (topologicalParentFilter.hasClass("chzn-done")) {
+			topologicalParentFilter.trigger("liszt:updated");
 		} else {
-			topLevelParentSelector.chosen().change(updateTopLevelParents);
+			topologicalParentFilter.chosen().change(updateTopLevelParents);
 		}
 	}
 
 	function updateTopLevelParents(event) {
 		var topLevelParentIds = [];
-		var selectedTopLevelParentIds = $("#selectTopLevelParent").val();
+		var selectedTopLevelParentIds = $("#topologicalParentFilter").val();
 		if (selectedTopLevelParentIds && selectedTopLevelParentIds.length > 0) {
 			$.each(selectedTopLevelParentIds, function(i, selectedTopLevelParentId) {
 				topLevelParentIds.push(parseInt(selectedTopLevelParentId));

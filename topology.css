@@ -1,23 +1,20 @@
-#selectTopLevelParentContainer {
+#treeControls {
 	float: right;
 	width: 500px;
 	display: none;
 	padding: 5px;
 }
 
-#selectTopLevelParent {
+#topologicalParentFilter {
 	width: 500px;
 }
 
-#inProgressBar {
+#progressBar {
 	padding: 5px;
 }
 
-#error {
-	padding: 5px;
-	display: none;
-	color: DarkRed;
-	width: 100%;
+#tree {
+	height: 800px;
 }
 
 ul {
@@ -29,6 +26,12 @@ ul {
 #tooltip {
 	position: fixed;	
 	display: none;
+	background-color: rgba(0, 0, 0, 0.6);
+	border: 2px solid;
+	border-radius: 5px;
+	color: white;
+	padding: 3px;
+	pointer-events: none;
 } 
 
 .tooltipDetailTitle {
@@ -42,24 +45,11 @@ ul {
 	margin-top: 2px;
 }
 
-div.topoTree {
-	height: 800px;
-}
-
-.systemTooltip {
-	background-color: rgba(0, 0, 0, 0.6);
-	border: 2px solid;
-	border-radius: 5px;
-	color: white;
-	padding: 3px;
-	pointer-events: none;
-}
-
 .node {
 	cursor: pointer;
 }
 
-path.link {
+.link {
 	fill: none;
 	stroke: #ccc;
 	stroke-width: 1px;

@@ -18,10 +18,9 @@
 		<script src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>
 	</head>
 	<body>
-		<div id="selectTopLevelParentContainer"><select data-placeholder="Filter by topological parent" multiple="true" id="selectTopLevelParent"></select></div>
-		<div id="topoTree"><img class="ProgressBar" id="inProgressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif" /></div>
-		<div id="error"></div>
-		<div id="tooltip" class="systemTooltip"></div>
+		<div id="treeControls"><select data-placeholder="Filter by topological parent" multiple="true" id="topologicalParentFilter"></select></div>
+		<div id="tree"><img id="progressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif" /></div>
+		<div id="tooltip"></div>
 	</body>
 </html>
 ]]>
