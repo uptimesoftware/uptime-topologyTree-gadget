@@ -50,8 +50,6 @@ TopologyTreeBuilder = function() {
 
 	this.updateTree = function(source) {
 
-		var textPositionOffset = 20;
-
 		// Compute the new tree layout.
 		var nodes = tree.nodes(root).reverse();
 
@@ -63,9 +61,9 @@ TopologyTreeBuilder = function() {
 
 		renderLinks(nodes, source);
 
-		createNewNodes(node, source, textPositionOffset);
+		createNewNodes(node, source);
 
-		updateExistingNodes(node, textPositionOffset);
+		updateExistingNodes(node);
 
 		removeExitingNodes(node, source);
 
@@ -242,7 +240,7 @@ TopologyTreeBuilder = function() {
 
 	}
 
-	function updateExistingNodes(node, textPositionOffset) {
+	function updateExistingNodes(node) {
 		// Transition nodes to their new position.
 		var nodeUpdate = node.transition().duration(treeTransitionDuration).attr("transform", function(d) {
 			return "translate(" + d.y + "," + d.x + ")";
@@ -254,7 +252,7 @@ TopologyTreeBuilder = function() {
 		nodeUpdate.select("text").attr("text-anchor", function(d) {
 			return hasVisibleChildren(d) ? "end" : "start";
 		}).attr("x", function(d) {
-			return hasVisibleChildren(d) ? -textPositionOffset : textPositionOffset;
+			return hasVisibleChildren(d) ? -20 : 20;
 		}).style("fill-opacity", getTextOpacity);
 	}
 
@@ -262,7 +260,7 @@ TopologyTreeBuilder = function() {
 		return node.hasChildren && (node.expansion == "full" || (node.expansion != "none" && node.branches.length > 0));
 	}
 
-	function createNewNodes(node, source, textPositionOffset) {
+	function createNewNodes(node, source) {
 
 		// Enter any new nodes at the parent's previous position.
 
