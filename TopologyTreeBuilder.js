@@ -23,8 +23,6 @@ TopologyTreeBuilder = function() {
 
 	var root = null;
 
-	var topologyTreeInstance = this;
-
 	var currNodeId = 0;
 	var tree = d3.layout.tree().size([ treeDimensions.height, treeDimensions.width ]).children(getChildren).sort(function(a, b) {
 		return naturalSort(a.elementName, b.elementName);
@@ -43,7 +41,7 @@ TopologyTreeBuilder = function() {
 		tree.size([ treeDimensions.height, treeDimensions.width ]);
 
 		if (root != null) {
-			topologyTreeInstance.updateTree(root);
+			updateTree(root);
 		}
 
 	};
@@ -52,18 +50,17 @@ TopologyTreeBuilder = function() {
 		root = source;
 		root.oldX = treeDimensions.height / 2;
 		root.oldY = 10;
-		loadExpansions(root);
-		topologyTreeInstance.updateTree(root);
+		updateTree(root);
 	};
-	
+
 	this.reset = function() {
 		resetExpansions(root, null);
 	};
-	
+
 	this.expandAll = function() {
 		resetExpansions(root, "full");
 	};
-	
+
 	function resetExpansions(node, value) {
 		if (!node.hasChildren) {
 			return;
@@ -71,39 +68,37 @@ TopologyTreeBuilder = function() {
 		if (node.expansion != value) {
 			delete node.children;
 			node.expansion = value;
-			saveExpansion(node);
-			topologyTreeInstance.updateTree(node);
+			storeExpansion(node);
+			updateTree(node);
 		}
 		$.each(node.branches, function(i, child) {
 			resetExpansions(child, value);
 		});
 	}
-	
-	function saveExpansion(node) {
-		if (!window.localStorage) {
+
+	function storeExpansion(node) {
+		if (!window.localStorage || !node.hasChildren) {
 			return;
 		}
 		if (!node.expansion) {
-			window.localStorage.removeItem("uptime.TopologyTree." + node.elementId);
+			window.localStorage.removeItem(expansionStorageKey(node));
 			return;
 		}
-		window.localStorage.setItem("uptime.TopologyTree." + node.elementId, node.expansion);
+		window.localStorage.setItem(expansionStorageKey(node), node.expansion);
 	}
 
-	function loadExpansions(node) {
-		if (!window.localStorage) {
+	function loadStoredExpansion(node) {
+		if (!window.localStorage || !node.hasChildren || node.expansion) {
 			return;
 		}
-		if (!node.hasChildren) {
-			return;
-		}
-		node.expansion = window.localStorage.getItem("uptime.TopologyTree." + node.elementId);
-		$.each(node.branches, function(i, child) {
-			loadExpansions(child);
-		});
+		node.expansion = window.localStorage.getItem(expansionStorageKey(node));
 	}
 
-	this.updateTree = function(actionNode) {
+	function expansionStorageKey(node) {
+		return "uptime.TopologyTree." + uptimeGadget.getInstanceId() + "." + node.elementId;
+	}
+
+	function updateTree(actionNode) {
 		var treeNodes = tree.nodes(root).reverse();
 
 		detectCollisions(treeNodes);
@@ -123,7 +118,8 @@ TopologyTreeBuilder = function() {
 			node.oldX = node.x;
 			node.oldY = node.y;
 		});
-	};
+	}
+	;
 
 	function toTreeDimensions(dimensions) {
 		var w = dimensions.width - treeMargins[0] - treeMargins[2];
@@ -132,6 +128,7 @@ TopologyTreeBuilder = function() {
 	}
 
 	function getChildren(node) {
+		loadStoredExpansion(node);
 		if (!node.hasChildren || node.expansion == "none") {
 			return [];
 		}
@@ -185,8 +182,8 @@ TopologyTreeBuilder = function() {
 		} else {
 			node.expansion = "full";
 		}
-		saveExpansion(node);
-		topologyTreeInstance.updateTree(node);
+		storeExpansion(node);
+		updateTree(node);
 	}
 
 	function redirectToElementProfilePage(node) {
