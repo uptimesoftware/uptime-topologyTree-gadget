@@ -8,7 +8,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title>Topological Failure Tree</title>
+		<title>Topology Tree</title>
 		#includeResources(jquery,d3)
 		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" rel="stylesheet" />
 		<link href="__UPTIME_GADGET_BASE__/topology.css" rel="stylesheet" />
