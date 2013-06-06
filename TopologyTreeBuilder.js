@@ -52,28 +52,54 @@ TopologyTreeBuilder = function() {
 		root = source;
 		root.oldX = treeDimensions.height / 2;
 		root.oldY = 10;
+		loadExpansions(root);
 		topologyTreeInstance.updateTree(root);
 	};
 	
 	this.reset = function() {
-		setExpansion(root, null);
+		resetExpansions(root, null);
 	};
 	
 	this.expandAll = function() {
-		setExpansion(root, "full");
+		resetExpansions(root, "full");
 	};
 	
-	function setExpansion(node, value) {
+	function resetExpansions(node, value) {
 		if (!node.hasChildren) {
 			return;
 		}
 		if (node.expansion != value) {
 			delete node.children;
 			node.expansion = value;
+			saveExpansion(node);
 			topologyTreeInstance.updateTree(node);
 		}
 		$.each(node.branches, function(i, child) {
-			setExpansion(child, value);
+			resetExpansions(child, value);
+		});
+	}
+	
+	function saveExpansion(node) {
+		if (!window.localStorage) {
+			return;
+		}
+		if (!node.expansion) {
+			window.localStorage.removeItem("uptime.TopologyTree." + node.elementId);
+			return;
+		}
+		window.localStorage.setItem("uptime.TopologyTree." + node.elementId, node.expansion);
+	}
+
+	function loadExpansions(node) {
+		if (!window.localStorage) {
+			return;
+		}
+		if (!node.hasChildren) {
+			return;
+		}
+		node.expansion = window.localStorage.getItem("uptime.TopologyTree." + node.elementId);
+		$.each(node.branches, function(i, child) {
+			loadExpansions(child);
 		});
 	}
 
@@ -146,12 +172,12 @@ TopologyTreeBuilder = function() {
 		return 4.5;
 	}
 
-	function expandContractNode(node) {
+	function toggleExpansion(node) {
 		if (!node.hasChildren) {
 			return;
 		}
-		delete node.children; // need to do this so d3 doesn't keep copies
-		// everywhere
+		// need to do this so d3 doesn't keep copies everywhere
+		delete node.children;
 		if (node.expansion == "full") {
 			node.expansion = "none";
 		} else if (node.expansion == "none") {
@@ -159,6 +185,7 @@ TopologyTreeBuilder = function() {
 		} else {
 			node.expansion = "full";
 		}
+		saveExpansion(node);
 		topologyTreeInstance.updateTree(node);
 	}
 
@@ -277,7 +304,7 @@ TopologyTreeBuilder = function() {
 		var newNodes = visibleNodes.enter().append("svg:g").attr("class", "node").attr("transform", function(node) {
 			return translateYX(oldXY(actionNode));
 		}).on("mouseover", showStatusDetail).on("mouseout", hideStatusDetail);
-		newNodes.append("svg:circle").attr("r", 1e-6).on("click", expandContractNode);
+		newNodes.append("svg:circle").attr("r", 1e-6).on("click", toggleExpansion);
 		newNodes.append("svg:text").attr("dy", ".35em").text(function(node) {
 			return node.elementName;
 		}).style("fill-opacity", 1e-6).on("click", redirectToElementProfilePage);
