@@ -39,5 +39,8 @@ $(function() {
 		$("#tooltip").hide();
 		errorFormatter.getErrorBox(error, "Error retrieving data for Topology Tree.").appendTo($("body"));
 	}
+	
+	$("#reset").click(topologyTreeBuilder.reset);
+	$("#expandAll").click(topologyTreeBuilder.expandAll);
 
 });

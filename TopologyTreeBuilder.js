@@ -54,6 +54,28 @@ TopologyTreeBuilder = function() {
 		root.oldY = 10;
 		topologyTreeInstance.updateTree(root);
 	};
+	
+	this.reset = function() {
+		setExpansion(root, null);
+	};
+	
+	this.expandAll = function() {
+		setExpansion(root, "full");
+	};
+	
+	function setExpansion(node, value) {
+		if (!node.hasChildren) {
+			return;
+		}
+		if (node.expansion != value) {
+			delete node.children;
+			node.expansion = value;
+			topologyTreeInstance.updateTree(node);
+		}
+		$.each(node.branches, function(i, child) {
+			setExpansion(child, value);
+		});
+	}
 
 	this.updateTree = function(actionNode) {
 		var treeNodes = tree.nodes(root).reverse();

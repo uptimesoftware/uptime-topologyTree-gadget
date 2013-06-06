@@ -9,6 +9,10 @@
 	width: 500px;
 }
 
+button {
+	float: right;
+}
+
 #progressBar {
 	padding: 5px;
 }
