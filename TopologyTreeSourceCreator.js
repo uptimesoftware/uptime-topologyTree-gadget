@@ -54,7 +54,7 @@ TopologyTreeSourceCreator = function(options) {
 					return naturalSort(a.name, b.name);
 				});
 				element.message = data.message;
-				deferred.resolve(elementData);
+				deferred.resolve(element);
 			}).fail(function(jqXHR, textStatus, errorThrown) {
 				deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
 			});
