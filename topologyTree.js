@@ -3,8 +3,11 @@ $(function() {
 	var errorFormatter = new UPTIME.pub.errors.ErrorFormatter();
 
 	var rebuildInterval = 15 * 60 * 1000;
+	var refreshInterval = 30 * 1000;
 
-	var topologyTreeBuilder = new TopologyTreeBuilder();
+	var topologyTreeBuilder = new TopologyTreeBuilder({
+		refreshInterval : refreshInterval
+	});
 	var sourceBuilder = new TopologyTreeSourceCreator({
 		renderTree : renderTree,
 		displayError : displayError
@@ -39,7 +42,7 @@ $(function() {
 		$("#tooltip").hide();
 		errorFormatter.getErrorBox(error, "Error retrieving data for Topology Tree.").appendTo($("body"));
 	}
-	
+
 	$("#reset").click(topologyTreeBuilder.reset);
 	$("#expandAll").click(topologyTreeBuilder.expandAll);
 

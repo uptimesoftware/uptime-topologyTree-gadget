@@ -1,4 +1,12 @@
-TopologyTreeBuilder = function() {
+TopologyTreeBuilder = function(options) {
+	var refreshInterval = 30 * 1000;
+	if (typeof options == "object" && options.refreshInterval) {
+		if (typeof options.refreshInterval != "number" || options.refreshInterval < 0) {
+			throw new TypeError("refreshInterval must be a positive number or zero to disable");
+		}
+		refreshInterval = options.refreshInterval;
+	}
+
 	var treeMargins = [ 96, 24, 126, 64 ];
 	var visDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
 	var treeDimensions = toTreeDimensions(visDimensions);
@@ -22,6 +30,8 @@ TopologyTreeBuilder = function() {
 	}
 
 	var root = null;
+	var refreshableNodes = {};
+	var refreshTimeoutId = null;
 
 	var currNodeId = 0;
 	var tree = d3.layout.tree().size([ treeDimensions.height, treeDimensions.width ]).children(getChildren).sort(function(a, b) {
@@ -54,9 +64,57 @@ TopologyTreeBuilder = function() {
 			source.oldX = root.x;
 			source.oldY = root.y;
 		}
+		if (refreshTimeoutId != null) {
+			clearTimeout(refreshTimeoutId);
+			refreshTimeoutId = null;
+		}
+		refreshableNodes = {};
 		root = source;
 		updateTree(root);
+		if (refreshInterval > 0) {
+			refreshTimeoutId = setTimeout(refreshTree, refreshInterval);
+		}
 	};
+
+	function refreshTree() {
+		refreshTimeoutId = null;
+		var promises = [];
+		$.each(refreshableNodes, function(i, node) {
+			promises.push(refreshElementStatus(node));
+		});
+		UPTIME.pub.gadgets.promises.all(promises).then(function() {
+			if (refreshInterval > 0) {
+				refreshTimeoutId = setTimeout(refreshTree, refreshInterval);
+			}
+		});
+	}
+
+	function refreshElementStatus(node) {
+		var deferred = UPTIME.pub.gadgets.promises.defer();
+		$.ajax("/api/v1/elements/" + node.elementId + "/status", {
+			cache : false
+		}).done(function(data, textStatus, jqXHR) {
+			node.elementStatus = data.status;
+			node.statusMessage = data.message;
+			node.monitorStatus = $.map(data.monitorStatus, function(monitorStatus) {
+				return monitorStatus.isHidden ? undefined : {
+					id : monitorStatus.id,
+					name : monitorStatus.name,
+					status : monitorStatus.status
+				};
+			}).sort(function(a, b) {
+				return naturalSort(a.name, b.name);
+			});
+			d3.select("#topologyTreeNode_" + node.id).attr("class", getNodeClass(node));
+			deferred.resolve(node);
+		}).fail(function(jqXHR, textStatus, errorThrown) {
+			// TODO on 404, rebuild tree
+			deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
+		}).always(function() {
+			refreshableNodes[node.id] = node;
+		});
+		return deferred.promise;
+	}
 
 	this.reset = function() {
 		resetExpansions(root, null);
@@ -71,7 +129,7 @@ TopologyTreeBuilder = function() {
 			return;
 		}
 		if (node.expansion != value) {
-			delete node.children;
+			removeD3Children(node);
 			node.expansion = value;
 			storeExpansion(node);
 			updateTree(node);
@@ -132,6 +190,9 @@ TopologyTreeBuilder = function() {
 	}
 
 	function getChildren(node) {
+		if (node.elementId != 0 && !refreshableNodes[node.id]) {
+			refreshElementStatus(node);
+		}
 		loadStoredExpansion(node);
 		if (!node.hasChildren || node.expansion == "none") {
 			return [];
@@ -177,8 +238,7 @@ TopologyTreeBuilder = function() {
 		if (!node.hasChildren) {
 			return;
 		}
-		// need to do this so d3 doesn't keep copies everywhere
-		delete node.children;
+		removeD3Children(node);
 		if (node.expansion == "full") {
 			node.expansion = "none";
 		} else if (node.expansion == "none") {
@@ -188,6 +248,18 @@ TopologyTreeBuilder = function() {
 		}
 		storeExpansion(node);
 		updateTree(node);
+	}
+
+	function removeD3Children(node) {
+		// removes D3's "children" array so we can call updateTree() to rebuild
+		// it based on the expansion setting
+		if (node.hasChildren && node.children) {
+			$.each(node.children, function(i, child) {
+				removeD3Children(child);
+				delete refreshableNodes[child.id];
+			});
+			delete node.children;
+		}
 	}
 
 	function redirectToElementProfilePage(node) {
@@ -221,12 +293,14 @@ TopologyTreeBuilder = function() {
 	function constructMessage(node) {
 		var message = '<ul class="tooltipDetail">';
 		message += '<li><span class="tooltipDetailTitle">Element Name:</span><span>' + node.elementName + '</span></li>';
-		message += '<li><span class="tooltipDetailTitle">Element Status:</span><span>' + node.elementStatus + '</span></li>';
+		if (node.elementStatus) {
+			message += '<li><span class="tooltipDetailTitle">Element Status:</span><span>' + node.elementStatus + '</span></li>';
+		}
 		if (node.statusMessage) {
 			message += '<li><span class="tooltipDetailTitle">Status Message:</span><span>' + node.statusMessage + '</span></li>';
 		}
 		message += '<li><span class="tooltipDetailTitle">Element Type:</span><span>' + node.elementType + '</span></li>';
-		if (node.monitorStatus.length > 0) {
+		if (node.monitorStatus && node.monitorStatus.length > 0) {
 			message += '<li class="separator"></li>';
 			$.each(node.monitorStatus, function(i, monitorStatus) {
 				message += '<li><span class="tooltipDetailTitle">' + monitorStatus.name + ':</span><span>' + monitorStatus.status
@@ -267,9 +341,6 @@ TopologyTreeBuilder = function() {
 	}
 
 	function getTextOpacity(node) {
-		if (node.elementId == 0) {
-			return 0.5;
-		}
 		if (node.hasChildren || node.isCollide == false) {
 			return 1;
 		}
@@ -288,7 +359,7 @@ TopologyTreeBuilder = function() {
 
 	function updateExistingNodes(visibleNodes, visibleLinks) {
 		var updatedNodes = visibleNodes.transition().duration(treeTransitionDuration).attr("transform", translateYX);
-		updatedNodes.select("circle").attr("r", getStrokeWidthBasedOnChildren).style("fill", getFillColor);
+		updatedNodes.select("circle").attr("r", getStrokeWidthBasedOnChildren);
 		updatedNodes.select("text").attr("text-anchor", function(node) {
 			return hasVisibleChildren(node) ? "end" : "start";
 		}).attr("x", function(node) {
@@ -302,7 +373,9 @@ TopologyTreeBuilder = function() {
 	}
 
 	function createNewNodes(visibleNodes, visibleLinks, actionNode) {
-		var newNodes = visibleNodes.enter().append("svg:g").attr("class", "node").attr("transform", function(node) {
+		var newNodes = visibleNodes.enter().append("svg:g").attr("id", function(node) {
+			return "topologyTreeNode_" + node.id;
+		}).attr("class", getNodeClass).attr("transform", function(node) {
 			return translateYX(oldXY(actionNode));
 		}).on("mouseover", showStatusDetail).on("mouseout", hideStatusDetail);
 		newNodes.append("svg:circle").attr("r", 1e-6).on("click", toggleExpansion);
@@ -311,6 +384,16 @@ TopologyTreeBuilder = function() {
 		}).style("fill-opacity", 1e-6).on("click", redirectToElementProfilePage);
 		visibleLinks.enter().insert("svg:path", "g").attr("class", "link").attr("d",
 				d3.svg.diagonal().source(oldXY(actionNode)).target(oldXY(actionNode)).projection(projectYX));
+	}
+
+	function getNodeClass(node) {
+		if (node.elementId == 0) {
+			return "node node-root";
+		}
+		if (node.elementStatus) {
+			return "node node-" + node.elementStatus;
+		}
+		return "node";
 	}
 
 	function isCollide(node, node_sibling) {

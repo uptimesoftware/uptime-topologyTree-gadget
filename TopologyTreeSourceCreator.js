@@ -36,33 +36,6 @@ TopologyTreeSourceCreator = function(options) {
 		buildTree(settings.topLevelParentIds);
 	}
 
-	function getElementStatuses(elements) {
-		var promises = [];
-		$.each(elements, function(i, element) {
-			var deferred = UPTIME.pub.gadgets.promises.defer();
-			$.ajax("/api/v1/elements/" + element.id + "/status", {
-				cache : false
-			}).done(function(data, textStatus, jqXHR) {
-				element.status = data.status;
-				element.monitorStatus = $.map(data.monitorStatus, function(monitorStatus) {
-					return monitorStatus.isHidden ? undefined : {
-						id : monitorStatus.id,
-						name : monitorStatus.name,
-						status : monitorStatus.status
-					};
-				}).sort(function(a, b) {
-					return naturalSort(a.name, b.name);
-				});
-				element.message = data.message;
-				deferred.resolve(element);
-			}).fail(function(jqXHR, textStatus, errorThrown) {
-				deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
-			});
-			promises.push(deferred.promise);
-		});
-		return UPTIME.pub.gadgets.promises.all(promises);
-	}
-
 	function getTopologicalElements() {
 		var deferred = UPTIME.pub.gadgets.promises.defer();
 		$.ajax("/api/v1/elements", {
@@ -88,7 +61,7 @@ TopologyTreeSourceCreator = function(options) {
 
 	this.getSource = function() {
 		uptimeGadget.loadSettings().then(function(settings) {
-			getTopologicalElements().then(getElementStatuses).then(function(elements) {
+			getTopologicalElements().then(function(elements) {
 				initializeAndBuildTree(settings, elements);
 			}, displayError);
 		}, displayError);

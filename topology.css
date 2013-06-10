@@ -49,9 +49,35 @@ ul {
 	margin-top: 2px;
 }
 
-.node {
+.node text {
 	cursor: pointer;
 }
+
+.node circle {
+	cursor: pointer;
+	fill: #E6E6E6;
+}
+
+.node-root circle {
+	fill: black;
+}
+
+.node-CRIT circle {
+	fill: #B61211;
+}
+
+.node-WARN circle {
+	fill: #DAD60B;
+}
+
+.node-OK circle {
+	fill: #67B10B;
+}
+
+.node-MAINT circle {
+	fill: #555B98;
+}
+
 
 .link {
 	fill: none;
