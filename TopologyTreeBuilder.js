@@ -124,7 +124,6 @@ TopologyTreeBuilder = function() {
 			node.oldY = node.y;
 		});
 	}
-	;
 
 	function toTreeDimensions(dimensions) {
 		var w = dimensions.width - treeMargins[0] - treeMargins[2];
