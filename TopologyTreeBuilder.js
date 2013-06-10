@@ -47,9 +47,14 @@ TopologyTreeBuilder = function() {
 	};
 
 	this.buildTree = function(source) {
+		if (root == null) {
+			source.oldX = treeDimensions.height / 2;
+			source.oldY = 10;
+		} else {
+			source.oldX = root.x;
+			source.oldY = root.y;
+		}
 		root = source;
-		root.oldX = treeDimensions.height / 2;
-		root.oldY = 10;
 		updateTree(root);
 	};
 
