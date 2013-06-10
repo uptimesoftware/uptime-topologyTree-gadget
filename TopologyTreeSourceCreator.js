@@ -91,10 +91,6 @@ TopologyTreeSourceCreator = function(options) {
 		}, displayError);
 	};
 
-	this.rebuildTreeWithCachedResults = function() {
-		updateTopLevelParents();
-	};
-
 	function createTreeNode(element) {
 		var node = {};
 		node.elementId = element.id;
