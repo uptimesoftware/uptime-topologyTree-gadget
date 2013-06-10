@@ -36,48 +36,51 @@ TopologyTreeSourceCreator = function(options) {
 		buildTree(settings.topLevelParentIds);
 	}
 
-	function getTopologicalElementStatuses(elements) {
+	function getElementStatuses(elements) {
 		var promises = [];
 		$.each(elements, function(i, element) {
-			if (element.isMonitored && (element.topologicalParents.length > 0 || element.topologicalChildren.length > 0)) {
-				var deferred = UPTIME.pub.gadgets.promises.defer();
-				var elementData = {};
-				elementData.id = element.id;
-				elementData.name = element.name;
-				elementData.typeSubtypeName = element.typeSubtypeName;
-				$.ajax("/api/v1/elements/" + element.id + "/status", {
-					cache : false
-				}).done(function(data, textStatus, jqXHR) {
-					elementData.status = data.status;
-					elementData.parents = element.topologicalParents;
-					elementData.hasChildren = element.topologicalChildren.length > 0;
-					elementData.monitorStatus = $.map(data.monitorStatus, function(v, k) {
-						return v.isHidden ? undefined : {
-							id : v.id,
-							name : v.name,
-							status : v.status
-						};
-					}).sort(function(a, b) {
-						return naturalSort(a.name, b.name);
-					});
-					elementData.message = data.message;
-					deferred.resolve(elementData);
-				}).fail(function(jqXHR, textStatus, errorThrown) {
-					deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
+			var deferred = UPTIME.pub.gadgets.promises.defer();
+			$.ajax("/api/v1/elements/" + element.id + "/status", {
+				cache : false
+			}).done(function(data, textStatus, jqXHR) {
+				element.status = data.status;
+				element.monitorStatus = $.map(data.monitorStatus, function(monitorStatus) {
+					return monitorStatus.isHidden ? undefined : {
+						id : monitorStatus.id,
+						name : monitorStatus.name,
+						status : monitorStatus.status
+					};
+				}).sort(function(a, b) {
+					return naturalSort(a.name, b.name);
 				});
-				promises.push(deferred.promise);
-			}
+				element.message = data.message;
+				deferred.resolve(elementData);
+			}).fail(function(jqXHR, textStatus, errorThrown) {
+				deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
+			});
+			promises.push(deferred.promise);
 		});
 		return UPTIME.pub.gadgets.promises.all(promises);
 	}
 
-	function getElements() {
+	function getTopologicalElements() {
 		var deferred = UPTIME.pub.gadgets.promises.defer();
 		$.ajax("/api/v1/elements", {
 			cache : false
-		}).done(function(data, textStatus, jqXHR) {
-			deferred.resolve(data);
-		}).fail(function(jqXHR, textStatus, errorThrown) {
+		}).done(
+				function(data, textStatus, jqXHR) {
+					deferred.resolve($.map(data, function(element) {
+						return !element.isMonitored
+								|| !(element.topologicalParents.length > 0 || element.topologicalChildren.length > 0) ? undefined
+								: {
+									id : element.id,
+									name : element.name,
+									typeSubtypeName : element.typeSubtypeName,
+									parents : element.topologicalParents,
+									hasChildren : element.topologicalChildren.length > 0
+								};
+					}));
+				}).fail(function(jqXHR, textStatus, errorThrown) {
 			deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
 		});
 		return deferred.promise;
@@ -85,7 +88,7 @@ TopologyTreeSourceCreator = function(options) {
 
 	this.getSource = function() {
 		uptimeGadget.loadSettings().then(function(settings) {
-			getElements().then(getTopologicalElementStatuses).then(function(elements) {
+			getTopologicalElements().then(getElementStatuses).then(function(elements) {
 				initializeAndBuildTree(settings, elements);
 			}, displayError);
 		}, displayError);
@@ -151,19 +154,19 @@ TopologyTreeSourceCreator = function(options) {
 			createBranch(treeLookup, element, root);
 		});
 		$.each(treeLookup, function(i, node) {
-			node.leaves = $.map(node.leaves, function(v, k) {
-				return v;
+			node.leaves = $.map(node.leaves, function(node) {
+				return node;
 			});
-			node.branches = $.map(node.branches, function(v, k) {
-				return v;
+			node.branches = $.map(node.branches, function(node) {
+				return node;
 			});
 		});
 		renderTree(decompressTree(root));
 	}
 
 	function populateTopologicalParentFilter(selectedTopLevelParentIds) {
-		var parents = $.map(elementsWithChildren, function(v, k) {
-			return elementLookup[v];
+		var parents = $.map(elementsWithChildren, function(elementId) {
+			return elementLookup[elementId];
 		}).sort(function(a, b) {
 			return naturalSort(a.name, b.name);
 		});
