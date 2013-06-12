@@ -36,6 +36,7 @@ ul {
 	color: white;
 	padding: 3px;
 	pointer-events: none;
+	cursor: default;
 } 
 
 .tooltipDetailTitle {
