@@ -465,17 +465,21 @@ TopologyTreeBuilder = function(userOptions) {
 		n2y1 = node_sibling.y - r2, n2y2 = node_sibling.y + r2;
 		result = ((n1x1 < n2x2 && n1x1 > n2x1) || (n1x2 > n2x2 && n1x2 < n2x1))
 				&& ((n1y1 <= n2y2 && n1y1 >= n2y1) || (n1y2 >= n2y2 && n1y2 <= n2y1));
-
 		return result;
 	}
 
 	function detectCollisions(nodes) {
 		nodes.forEach(function(node) {
 			node.isCollide = false;
-			if (node.parent) {
+		});
+		nodes.forEach(function(node) {
+			if (node.parent && !node.isCollide) {
 				$.each(getChildren(node.parent), function(i, sibling) {
-					if (node.elementId != sibling.elementId && isCollide(node, sibling)) {
-						node.isCollide = true;
+					if (node.elementId != sibling.elementId) {
+						if (node.isCollide = isCollide(node, sibling)) {
+							sibling.isCollide = true;
+							return false;
+						}
 					}
 				});
 			}
