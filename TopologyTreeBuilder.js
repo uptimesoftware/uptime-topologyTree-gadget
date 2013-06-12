@@ -38,7 +38,7 @@ TopologyTreeBuilder = function(options) {
 		return naturalSort(a.elementName, b.elementName);
 	});
 
-	var vis = d3.select("#tree").append("svg:svg").attr("width", visDimensions.width).attr("height", visDimensions.height)
+	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width", visDimensions.width).attr("height", visDimensions.height)
 			.append("svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
 
 	this.resize = function(dimensions) {
@@ -46,7 +46,7 @@ TopologyTreeBuilder = function(options) {
 		visDimensions = dimensions;
 		treeDimensions = toTreeDimensions(visDimensions);
 
-		d3.select("svg").attr("width", visDimensions.width).attr("height", visDimensions.height);
+		d3.select("#treeCanvas").attr("width", visDimensions.width).attr("height", visDimensions.height);
 
 		tree.size([ treeDimensions.height, treeDimensions.width ]);
 

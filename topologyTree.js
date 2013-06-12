@@ -30,7 +30,7 @@ $(function() {
 	function renderTree(root) {
 		$("#progressBar").hide();
 		$("#treeControls").show();
-		$("#tree").show();
+		$("#treeContainer").show();
 		$("#tooltip").show();
 		topologyTreeBuilder.buildTree(root);
 	}
@@ -38,7 +38,7 @@ $(function() {
 	function displayError(error) {
 		$("#progressBar").hide();
 		$("#treeControls").hide();
-		$("#tree").hide();
+		$("#treeContainer").hide();
 		$("#tooltip").hide();
 		errorFormatter.getErrorBox(error, "Error retrieving data for Topology Tree.").appendTo($("body"));
 	}
