@@ -43,15 +43,14 @@ TopologyTreeSourceCreator = function(options) {
 		}).done(
 				function(data, textStatus, jqXHR) {
 					deferred.resolve($.map(data, function(element) {
-						return !element.isMonitored
-								|| !(element.topologicalParents.length > 0 || element.topologicalChildren.length > 0) ? undefined
-								: {
-									id : element.id,
-									name : element.name,
-									typeSubtypeName : element.typeSubtypeName,
-									parents : element.topologicalParents,
-									hasChildren : element.topologicalChildren.length > 0
-								};
+						return element.topologicalChildren.length == 0
+								&& (element.topologicalParents.length == 0 || !element.isMonitored) ? undefined : {
+							id : element.id,
+							name : element.name,
+							typeSubtypeName : element.typeSubtypeName,
+							parents : element.topologicalParents,
+							hasChildren : element.topologicalChildren.length > 0
+						};
 					}));
 				}).fail(function(jqXHR, textStatus, errorThrown) {
 			deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
