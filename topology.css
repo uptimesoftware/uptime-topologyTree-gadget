@@ -58,7 +58,12 @@ ul {
 	fill: #E6E6E6;
 }
 
+.node-root text {
+	cursor: default;
+}
+
 .node-root circle {
+	cursor: auto;
 	fill: black;
 }
 
