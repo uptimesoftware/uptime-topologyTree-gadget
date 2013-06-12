@@ -6,11 +6,12 @@ $(function() {
 	var refreshInterval = 30 * 1000;
 
 	var topologyTreeBuilder = new TopologyTreeBuilder({
-		refreshInterval : refreshInterval
+		refreshInterval : refreshInterval,
+		errorHandler : displayError
 	});
 	var sourceBuilder = new TopologyTreeSourceCreator({
-		renderTree : renderTree,
-		displayError : displayError
+		treeRenderer : renderTree,
+		errorHandler : displayError
 	});
 
 	uptimeGadget.registerOnLoadHandler(function(onLoadData) {

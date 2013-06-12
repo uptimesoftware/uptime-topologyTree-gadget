@@ -1,16 +1,15 @@
-TopologyTreeSourceCreator = function(options) {
-	if (typeof options != "object") {
-		throw new TypeError("Must provide renderTree and displayError callbacks in options");
-	}
-	if (typeof options.renderTree != "function") {
-		throw new TypeError("renderTree argument must be a function");
-	}
-	if (typeof options.displayError != "function") {
-		throw new TypeError("displayError argument must be a function");
-	}
+TopologyTreeSourceCreator = function(userOptions) {
+	var options = $.extend({
+		treeRenderer : undefined,
+		errorHandler : undefined
+	}, userOptions);
 
-	var renderTree = options.renderTree;
-	var displayError = options.displayError;
+	if (typeof options.treeRenderer != "function") {
+		throw new TypeError("treeRenderer must be a function");
+	}
+	if (typeof options.errorHandler != "undefined" && typeof options.errorHandler != "function") {
+		throw new TypeError("errorHandler must be a function");
+	}
 
 	var elementLookup = {};
 	var elementsWithNoParents = [];
@@ -31,6 +30,9 @@ TopologyTreeSourceCreator = function(options) {
 			if (element.hasChildren) {
 				elementsWithChildren.push(element.id);
 			}
+		});
+		settings.topLevelParentIds = $.grep(settings.topLevelParentIds, function(topLevelParentId) {
+			return elementLookup[topLevelParentId];
 		});
 		populateTopologicalParentFilter(settings.topLevelParentIds);
 		buildTree(settings.topLevelParentIds);
@@ -62,8 +64,8 @@ TopologyTreeSourceCreator = function(options) {
 		uptimeGadget.loadSettings().then(function(settings) {
 			getTopologicalElements().then(function(elements) {
 				initializeAndBuildTree(settings, elements);
-			}, displayError);
-		}, displayError);
+			}, options.errorHandler);
+		}, options.errorHandler);
 	};
 
 	function createTreeNode(element) {
@@ -133,7 +135,7 @@ TopologyTreeSourceCreator = function(options) {
 				return node;
 			});
 		});
-		renderTree(decompressTree(root));
+		options.treeRenderer(decompressTree(root));
 	}
 
 	function populateTopologicalParentFilter(selectedTopLevelParentIds) {
