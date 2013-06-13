@@ -481,17 +481,21 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function detectCollisions(nodes) {
+		var childrenCache = {};
 		nodes.forEach(function(node) {
 			node.isCollide = undefined;
+			if (node.hasChildren) {
+				childrenCache[node.elementId] = getChildren(node);
+			}
 		});
 		nodes.forEach(function(node) {
 			if (node.parent && typeof node.isCollide == "undefined") {
-				$.each(getChildren(node.parent), function(i, sibling) {
-					if (node.elementId != sibling.elementId) {
-						if (node.isCollide = isCollide(node, sibling)) {
-							sibling.isCollide = true;
-							return false;
-						}
+				$.each(childrenCache[node.parent.elementId], function(i, sibling) {
+					if (node.elementId == sibling.elementId) {
+						node.isCollide = false;
+					} else if (node.isCollide = isCollide(node, sibling)) {
+						sibling.isCollide = true;
+						return false;
 					}
 				});
 			}
