@@ -19,6 +19,11 @@ TopologyTreeBuilder = function(userOptions) {
 	var treeTransitionDuration = 500;
 	var tooltipTransitionDuration = 200;
 
+	var expandedRadius = 4;
+	var minContractedRadius = 6;
+	var maxContractedRadius = 20;
+	var massiveNodeRadius = 30;
+
 	function translateYX(d) {
 		return "translate(" + d.y + "," + d.x + ")";
 	}
@@ -252,15 +257,19 @@ TopologyTreeBuilder = function(userOptions) {
 		}
 	}
 
-	function getStrokeWidthBasedOnChildren(node) {
+	function getRadius(node) {
+		var r = expandedRadius;
 		if (node.hasChildren && node.expansion != "full") {
 			if (node.expansion == "none") {
-				return 6.5 + (node.branches.length + node.leaves.length) * 0.1;
+				r = minContractedRadius + (node.branches.length + node.leaves.length) * 0.1;
 			} else if (node.leaves.length > 0) {
-				return 6.5 + node.leaves.length * 0.1;
+				r = minContractedRadius + node.leaves.length * 0.1;
+			}
+			if (r > maxContractedRadius) {
+				r = massiveNodeRadius;
 			}
 		}
-		return 4.5;
+		return r;
 	}
 
 	function toggleExpansion(node) {
@@ -420,7 +429,7 @@ TopologyTreeBuilder = function(userOptions) {
 
 	function updateExistingNodes(visibleNodes, visibleLinks) {
 		var updatedNodes = visibleNodes.transition().duration(treeTransitionDuration).attr("transform", translateYX);
-		updatedNodes.select("circle").attr("r", getStrokeWidthBasedOnChildren);
+		updatedNodes.select("circle").attr("r", getRadius);
 		updatedNodes.select("text").attr("text-anchor", function(node) {
 			return hasVisibleChildren(node) ? "end" : "start";
 		}).attr("x", function(node) {
@@ -461,14 +470,14 @@ TopologyTreeBuilder = function(userOptions) {
 		if (sibling.isCollide === false) {
 			return false;
 		}
-		var r = getStrokeWidthBasedOnChildren(node);
+		var r = getRadius(node);
 		var box = {
 			left : node.x - r,
 			right : node.x + r,
 			top : node.y - r,
 			bottom : node.y + r
 		};
-		var r2 = getStrokeWidthBasedOnChildren(sibling);
+		var r2 = getRadius(sibling);
 		var siblingBox = {
 			left : sibling.x - r2,
 			right : sibling.x + r2,
