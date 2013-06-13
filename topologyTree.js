@@ -8,7 +8,8 @@ $(function() {
 
 	var topologyTreeBuilder = new TopologyTreeBuilder({
 		refreshInterval : refreshInterval,
-		errorHandler : displayError
+		errorHandler : displayError,
+		okHandler : clearNotificationPanel
 	});
 	var sourceBuilder = new TopologyTreeSourceCreator({
 		treeRenderer : renderTree,
@@ -46,9 +47,9 @@ $(function() {
 	function displayError(error) {
 		$("#progressBar").hide();
 		$("#tooltip").hide();
+		gadgetDimOn();
 		var notificationPanel = $("#notificationPanel").empty();
 		errorFormatter.getErrorBox(error, "Error retrieving data for Topology Tree.").appendTo(notificationPanel);
-		gadgetDimOn();
 		notificationPanel.slideDown();
 	}
 
