@@ -1,7 +1,8 @@
 TopologyTreeBuilder = function(userOptions) {
 	var options = $.extend({
 		refreshInterval : 30 * 1000,
-		errorHandler : undefined
+		errorHandler : undefined,
+		okHandler : undefined
 	}, userOptions);
 
 	if (typeof options.refreshInterval != "number" || options.refreshInterval < 0) {
@@ -93,7 +94,7 @@ TopologyTreeBuilder = function(userOptions) {
 			// appears as multiple different nodes in the tree, but oh well
 			promises.push(refreshElementStatus(node));
 		});
-		UPTIME.pub.gadgets.promises.all(promises).then(scheduleNextRefresh, options.errorHandler).then(null, scheduleNextRefresh);
+		UPTIME.pub.gadgets.promises.all(promises).then(options.okHandler, options.errorHandler).then(scheduleNextRefresh);
 	}
 
 	function refreshElementStatus(node) {
