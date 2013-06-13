@@ -1,6 +1,7 @@
 $(function() {
 
 	var errorFormatter = new UPTIME.pub.errors.ErrorFormatter();
+	var divsToDim = [ '#treeContainer', '#treeControls' ];
 
 	var rebuildInterval = 15 * 60 * 1000;
 	var refreshInterval = 30 * 1000;
@@ -29,6 +30,7 @@ $(function() {
 	}
 
 	function renderTree(root) {
+		clearNotificationPanel();
 		$("#progressBar").hide();
 		$("#treeControls").show();
 		$("#treeContainer").show();
@@ -36,12 +38,36 @@ $(function() {
 		topologyTreeBuilder.buildTree(root);
 	}
 
+	function clearNotificationPanel() {
+		$('#notificationPanel').slideUp().empty();
+		gadgetDimOff();
+	}
+
 	function displayError(error) {
 		$("#progressBar").hide();
-		$("#treeControls").hide();
-		$("#treeContainer").hide();
 		$("#tooltip").hide();
-		errorFormatter.getErrorBox(error, "Error retrieving data for Topology Tree.").appendTo($("body"));
+		var notificationPanel = $("#notificationPanel").empty();
+		errorFormatter.getErrorBox(error, "Error retrieving data for Topology Tree.").appendTo(notificationPanel);
+		gadgetDimOn();
+		notificationPanel.slideDown();
+	}
+
+	function gadgetDimOn() {
+		$.each(divsToDim, function(i, d) {
+			var div = $(d);
+			if (div.is(':visible') && div.css('opacity') > 0.6) {
+				div.fadeTo('slow', 0.3);
+			}
+		});
+	}
+
+	function gadgetDimOff() {
+		$.each(divsToDim, function(i, d) {
+			var div = $(d);
+			if (div.is(':visible') && div.css('opacity') < 0.6) {
+				div.fadeTo('slow', 1);
+			}
+		});
 	}
 
 	$("#reset").click(topologyTreeBuilder.reset);

@@ -1,3 +1,11 @@
+#notificationPanel {
+	position: absolute;
+	top: 10px;
+	left: 0px;
+	display: none;
+	width: 100%;
+}
+
 #treeControls {
 	float: right;
 	width: 500px;
