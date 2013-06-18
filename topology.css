@@ -67,6 +67,10 @@ ul {
 	fill: #E6E6E6;
 }
 
+.node circle:hover {
+	opacity: 0.9;
+}
+
 .node-root text {
 	cursor: default;
 }
