@@ -4,12 +4,15 @@
 
 ## Getting Started
 This gadget is built using Grunt `~0.4.1`.
+
 1. Install [Node Packaging Modules](https://npmjs.org/)
+
 2. Go to the repository on the commandline and type:
 ```shell
 npm install -g grunt-cli
 ```
 This will setup Grunt.
+
 3. To download all the dependencies required for the gadget project, type:
 ```shell
 npm install
