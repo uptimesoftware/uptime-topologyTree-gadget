@@ -1,5 +1,5 @@
 {
-	"name": "TopologyTree",
+	"name": "uptime.TopologyTree",
 	"version": "0.1.0-SNAPSHOT",
 	"description": "Topology Tree gadget",
 	"main": "topologyTree.js",
