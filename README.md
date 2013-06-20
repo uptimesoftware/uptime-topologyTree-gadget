@@ -22,5 +22,5 @@ grunt --target=[desired_output_folder]
 `--target` flag is optional.  If not specified, output will simply go to a subfolder called `target/` as shown above.
 
 ### Maven Deploy and Release tasks
-Tasks are provided to deploy to a Maven repository.  See [uptime-gadget-tasks](https://github.com/ikrolo/uptime-gadget-tasks-ivan) for instructions on use.
+Tasks are provided to deploy to a Maven repository.  See [uptime-gadget-tasks](https://github.com/uptimesoftware/uptime-gadget-tasks) for instructions on use.
 
