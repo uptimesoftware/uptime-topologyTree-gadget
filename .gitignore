@@ -1,4 +1,7 @@
 target/
 eclipse/
-.project
 .settings/
+node_modules/
+.project
+mavenOptions.json
+npm-debug.log
