@@ -17,8 +17,23 @@
 	width: 500px;
 }
 
-button {
+button, input[type="checkbox"], label {
 	float: right;
+	margin: 1px;
+}
+
+label {
+	display: inline-block;
+	line-height: 25px;
+}
+
+.verticalDivider {
+	border-left: 1px solid #ccc;
+	border-right: 1px solid #E6E6E6;
+	height: 20px;
+	margin: 2px;
+	float: right;
+	display: inline-block;
 }
 
 #progressBar {
