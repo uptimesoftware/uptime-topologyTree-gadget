@@ -1,4 +1,4 @@
-# uptime-gadget-tasks
+# Topology Gadget
 
 > up.time gadget to display Topologies.
 
@@ -22,7 +22,7 @@ If you run into any issues, please be sure to check out the [Getting Started](ht
 
 ## Available build tasks
 ### "compress" task (default)
-> Compresses everything in the `src/` folder into `target/TopologyTree.zip`. 
+> Compresses everything in the `src/` folder into `target/uptime.TopologyTree.zip`. 
 
 ```shell
 grunt --target=[desired_output_folder]

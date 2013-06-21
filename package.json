@@ -2,14 +2,10 @@
 	"name": "uptime.TopologyTree",
 	"version": "0.1.0-SNAPSHOT",
 	"description": "Topology Tree gadget",
-	"main": "topologyTree.js",
+	"main": "src/topologyTree.js",
 	"repository": {
-			"type": "git",
-			"url": "https://github.com/uptimesoftware/uptime-topologyTree-gadget.git"
-		},
-		"gitHead": "8b7a3b097c77462621d184d4051c35995b60e8f9",
-		"bugs": {
-		"url": "https://github.com/uptimesoftware/uptime-topologyTree-gadget/issues"
+		"type": "git",
+		"url": "https://github.com/uptimesoftware/uptime-topologyTree-gadget.git"
 	},
 	"dependencies": {
 		"uptime-gadget-tasks": "git://github.com/uptimesoftware/uptime-gadget-tasks.git"

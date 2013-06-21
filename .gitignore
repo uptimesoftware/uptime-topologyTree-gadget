@@ -2,6 +2,6 @@ target/
 eclipse/
 .settings/
 node_modules/
+userOptions/
 .project
-mavenOptions.json
 npm-debug.log
