@@ -2,7 +2,8 @@ TopologyTreeBuilder = function(userOptions) {
 	var options = $.extend({
 		refreshInterval : 30 * 1000,
 		errorHandler : undefined,
-		okHandler : undefined
+		okHandler : undefined,
+		showLabels : true
 	}, userOptions);
 
 	if (typeof options.refreshInterval != "number" || options.refreshInterval < 0) {
@@ -191,8 +192,6 @@ TopologyTreeBuilder = function(userOptions) {
 
 	function updateTree(actionNode) {
 		var treeNodes = tree.nodes(root).reverse();
-
-		detectCollisions(treeNodes);
 
 		// select the visible nodes/links and make sure they have unique ids
 		var visibleNodes = vis.selectAll("g.node").data(treeNodes, function(node) {
@@ -411,7 +410,7 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function getTextOpacity(node) {
-		if (node.hasChildren || node.isCollide == false) {
+		if (node.hasChildren || options.showLabels) {
 			return 1;
 		}
 		return 1e-6;
@@ -464,51 +463,6 @@ TopologyTreeBuilder = function(userOptions) {
 			return "node node-" + node.elementStatus;
 		}
 		return "node";
-	}
-
-	function isCollide(node, sibling) {
-		if (sibling.isCollide === false) {
-			return false;
-		}
-		var r = getRadius(node);
-		var box = {
-			left : node.x - r,
-			right : node.x + r,
-			top : node.y - r,
-			bottom : node.y + r
-		};
-		var r2 = getRadius(sibling);
-		var siblingBox = {
-			left : sibling.x - r2,
-			right : sibling.x + r2,
-			top : sibling.y - r2,
-			bottom : sibling.y + r2
-		};
-		var result = ((box.left <= siblingBox.left && siblingBox.left <= box.right) || (box.left <= siblingBox.right && siblingBox.right <= box.right))
-				&& ((box.top <= siblingBox.top && siblingBox.top <= box.bottom) || (box.top <= siblingBox.bottom && siblingBox.bottom <= box.bottom));
-		return result;
-	}
-
-	function detectCollisions(nodes) {
-		var childrenCache = {};
-		nodes.forEach(function(node) {
-			node.isCollide = undefined;
-			if (node.hasChildren) {
-				childrenCache[node.elementId] = getChildren(node);
-			}
-		});
-		nodes.forEach(function(node) {
-			if (node.parent && typeof node.isCollide == "undefined") {
-				$.each(childrenCache[node.parent.elementId], function(i, sibling) {
-					if (node.elementId == sibling.elementId) {
-						node.isCollide = false;
-					} else if (node.isCollide = isCollide(node, sibling)) {
-						sibling.isCollide = true;
-						return false;
-					}
-				});
-			}
-		});
 	}
 
 };
