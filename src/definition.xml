@@ -23,7 +23,7 @@
 			<button id="expandAll">Expand All</button>
 			<button id="reset">Reset</button>
 			<div class="verticalDivider"></div>
-			<input type="checkbox" id="showLabels" /><label for="showLabels">Show Labels</label>
+			<input type="checkbox" id="showLabels" checked="checked" /><label for="showLabels">Show Labels</label>
 		</div>
 		<div id="treeContainer"><img id="progressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif" /></div>
 		<div id="tooltip"></div>

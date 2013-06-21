@@ -14,11 +14,15 @@ TopologyTreeSourceCreator = function(userOptions) {
 	var elementLookup = {};
 	var elementsWithNoParents = [];
 	var elementsWithChildren = [];
+	var topLevelParentIds = [];
+	
+	this.setTopLevelParentIds = function(newTopLevelParentIds) {
+		if ($.isArray(newTopLevelParentIds)) {
+			topLevelParentIds = newTopLevelParentIds;
+		}
+	};
 
-	function initializeAndBuildTree(userSettings, elements) {
-		var settings = $.extend({
-			topLevelParentIds : []
-		}, userSettings);
+	function initializeAndBuildTree(elements) {
 		elementLookup = {};
 		elementsWithNoParents = [];
 		elementsWithChildren = [];
@@ -31,11 +35,11 @@ TopologyTreeSourceCreator = function(userOptions) {
 				elementsWithChildren.push(element.id);
 			}
 		});
-		settings.topLevelParentIds = $.grep(settings.topLevelParentIds, function(topLevelParentId) {
+		topLevelParentIds = $.grep(topLevelParentIds, function(topLevelParentId) {
 			return elementLookup[topLevelParentId];
 		});
-		populateTopologicalParentFilter(settings.topLevelParentIds);
-		buildTree(settings.topLevelParentIds);
+		populateTopologicalParentFilter();
+		buildTree();
 	}
 
 	function getTopologicalElements() {
@@ -61,10 +65,8 @@ TopologyTreeSourceCreator = function(userOptions) {
 	}
 
 	this.getSource = function() {
-		uptimeGadget.loadSettings().then(function(settings) {
-			getTopologicalElements().then(function(elements) {
-				initializeAndBuildTree(settings, elements);
-			}, options.errorHandler);
+		getTopologicalElements().then(function(elements) {
+			initializeAndBuildTree(elements);
 		}, options.errorHandler);
 	};
 
@@ -104,7 +106,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 		}
 	}
 
-	function createRoot(treeLookup, topLevelParentIds) {
+	function createRoot(treeLookup) {
 		if (topLevelParentIds.length == 0) {
 			topLevelParentIds = elementsWithNoParents;
 		}
@@ -121,9 +123,9 @@ TopologyTreeSourceCreator = function(userOptions) {
 		return root;
 	}
 
-	function buildTree(topLevelParentIds) {
+	function buildTree() {
 		var treeLookup = {};
-		var root = createRoot(treeLookup, topLevelParentIds);
+		var root = createRoot(treeLookup);
 		$.each(elementLookup, function(i, element) {
 			createBranch(treeLookup, element, root);
 		});
@@ -138,7 +140,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 		options.treeRenderer(decompressTree(root));
 	}
 
-	function populateTopologicalParentFilter(selectedTopLevelParentIds) {
+	function populateTopologicalParentFilter() {
 		var parents = $.map(elementsWithChildren, function(elementId) {
 			return elementLookup[elementId];
 		}).sort(function(a, b) {
@@ -147,7 +149,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 		var topologicalParentFilter = $("#topologicalParentFilter").empty().prop('disabled', !uptimeGadget.isOwner());
 		$.each(parents, function(i, parent) {
 			$("<option></option>").val(parent.id).text(parent.name).prop("selected",
-					$.inArray(parent.id, selectedTopLevelParentIds) > -1).appendTo(topologicalParentFilter);
+					$.inArray(parent.id, topLevelParentIds) > -1).appendTo(topologicalParentFilter);
 		});
 		if (topologicalParentFilter.hasClass("chzn-done")) {
 			topologicalParentFilter.trigger("liszt:updated");
@@ -157,14 +159,14 @@ TopologyTreeSourceCreator = function(userOptions) {
 	}
 
 	function updateTopLevelParents(event) {
-		var topLevelParentIds = [];
+		topLevelParentIds = [];
 		var selectedTopLevelParentIds = $("#topologicalParentFilter").val();
 		if (selectedTopLevelParentIds && selectedTopLevelParentIds.length > 0) {
 			$.each(selectedTopLevelParentIds, function(i, selectedTopLevelParentId) {
 				topLevelParentIds.push(parseInt(selectedTopLevelParentId));
 			});
 		}
-		buildTree(topLevelParentIds);
+		buildTree();
 		var settings = {
 			topLevelParentIds : topLevelParentIds
 		};

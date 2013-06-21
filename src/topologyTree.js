@@ -18,8 +18,22 @@ $(function() {
 
 	uptimeGadget.registerOnLoadHandler(function(onLoadData) {
 		topologyTreeBuilder.resize(onLoadData.dimensions);
-		rebuildTree();
+		if (onLoadData.hasPreloadedSettings) {
+			processSettings(onLoadData.settings);
+		} else {
+			uptimeGadget.loadSettings().then(processSettings, displayError);
+		}
 	});
+
+	function processSettings(settings) {
+		if (settings) {
+			if (typeof settings.showLabels == "boolean") {
+				$("#showLabels").prop("selected", settings.showLabels);
+			}
+			sourceBuilder.setTopLevelParentIds(settings.topLevelParentIds);
+		}
+		rebuildTree();
+	}
 
 	uptimeGadget.registerOnResizeHandler(function(dimensions) {
 		topologyTreeBuilder.resize(dimensions);
@@ -73,5 +87,9 @@ $(function() {
 
 	$("#reset").click(topologyTreeBuilder.reset);
 	$("#expandAll").click(topologyTreeBuilder.expandAll);
+	$("#showLabels").change(function() {
+		var showLabels = $(this).is(":checked");
+		topologyTreeBuilder.setShowLabels(showLabels);
+	});
 
 });

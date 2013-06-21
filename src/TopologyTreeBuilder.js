@@ -2,8 +2,7 @@ TopologyTreeBuilder = function(userOptions) {
 	var options = $.extend({
 		refreshInterval : 30 * 1000,
 		errorHandler : undefined,
-		okHandler : undefined,
-		showLabels : true
+		okHandler : undefined
 	}, userOptions);
 
 	if (typeof options.refreshInterval != "number" || options.refreshInterval < 0) {
@@ -52,6 +51,15 @@ TopologyTreeBuilder = function(userOptions) {
 	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width", visDimensions.width).attr(
 			"height", visDimensions.height).append("svg:g").attr("transform",
 			"translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
+
+	var showLabels = true;
+
+	this.setShowLabels = function(newShowLabels) {
+		if (typeof newShowLabels == "boolean" && showLabels != newShowLabels) {
+			showLabels = newShowLabels;
+			vis.selectAll("g.node text").style("fill-opacity", getTextOpacity);
+		}
+	};
 
 	this.resize = function(dimensions) {
 
@@ -410,7 +418,7 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function getTextOpacity(node) {
-		if (node.hasChildren || options.showLabels) {
+		if (node.hasChildren || showLabels) {
 			return 1;
 		}
 		return 1e-6;
