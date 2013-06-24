@@ -54,7 +54,7 @@ ul {
 
 #tooltip {
 	position: fixed;
-	opactiy: 0;
+	opacity: 0;
 	background-color: rgba(0, 0, 0, 0.6);
 	border: 2px solid;
 	border-radius: 5px;
