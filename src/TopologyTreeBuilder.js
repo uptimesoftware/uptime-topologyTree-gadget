@@ -12,12 +12,11 @@ TopologyTreeBuilder = function(userOptions) {
 		throw new TypeError("errorHandler must be a function");
 	}
 
-	var treeMargins = [ 96, 24, 126, 64 ];
+	var treeMargins = [ 96, 5, 126, 5 ];
 	var visDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
 	var treeDimensions = toTreeDimensions(visDimensions);
 
-	var treeTransitionDuration = 500;
-	var tooltipTransitionDuration = 200;
+	var transitionDuration = 500;
 
 	var expandedRadius = 4;
 	var minContractedRadius = 6;
@@ -49,8 +48,8 @@ TopologyTreeBuilder = function(userOptions) {
 	});
 
 	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width", visDimensions.width).attr(
-			"height", visDimensions.height).append("svg:g").attr("transform",
-			"translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
+			"height", visDimensions.height).attr("viewBox", "0 0 " + visDimensions.width + " " + visDimensions.height).append(
+			"svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
 
 	var showLabels = true;
 
@@ -63,10 +62,11 @@ TopologyTreeBuilder = function(userOptions) {
 
 	this.resize = function(dimensions) {
 
-		visDimensions = dimensions;
+		visDimensions = toVisDimensions(dimensions);
 		treeDimensions = toTreeDimensions(visDimensions);
 
-		d3.select("#treeCanvas").attr("width", visDimensions.width).attr("height", visDimensions.height);
+		d3.select("#treeCanvas").attr("width", visDimensions.width).attr("height", visDimensions.height).attr("viewBox",
+				"0 0 " + visDimensions.width + " " + visDimensions.height);
 
 		tree.size([ treeDimensions.height, treeDimensions.width ]);
 
@@ -224,6 +224,10 @@ TopologyTreeBuilder = function(userOptions) {
 		});
 	}
 
+	function toVisDimensions(dimensions) {
+		return new UPTIME.pub.gadgets.Dimensions(Math.max(100, dimensions.width), Math.max(100, dimensions.height));
+	}
+
 	function toTreeDimensions(dimensions) {
 		var w = dimensions.width - treeMargins[0] - treeMargins[2];
 		var h = dimensions.height - treeMargins[1] - treeMargins[3];
@@ -351,20 +355,11 @@ TopologyTreeBuilder = function(userOptions) {
 		if (!node.elementId) {
 			return;
 		}
-		var text = d3.select(this).select("text");
-		text.style("fill-opacity", getTextOpacity(node));
-
-		showStatusMessage(node);
+		var div = d3.select("#tooltip");
+		div.transition().duration(transitionDuration).style("opacity", 1).style("border-color", getFillColor(node));
+		div.html(constructMessage(node)).style("left", (d3.event.pageX + 10) + "px").style("top", (d3.event.pageY - 28) + "px");
 
 		highlightPath(node);
-	}
-
-	function showStatusMessage(node) {
-		var div = d3.select("#tooltip");
-
-		div.transition().duration(tooltipTransitionDuration).style("opacity", 1).style("border-color", getFillColor(node));
-
-		div.html(constructMessage(node)).style("left", (d3.event.pageX + 10) + "px").style("top", (d3.event.pageY - 28) + "px");
 	}
 
 	function constructMessage(node) {
@@ -389,12 +384,10 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function hideStatusDetail(node) {
-
-		var text = d3.select(this).select("text");
-		text.style("fill-opacity", getTextOpacity(node));
 		var div = d3.select("#tooltip");
-		div.transition().duration(tooltipTransitionDuration).style("opacity", 1e-6);
-		vis.selectAll(".link").style("stroke", null);
+		div.transition().duration(transitionDuration).style("opacity", 1e-6);
+
+		unhighlightPath(node);
 	}
 
 	function highlightPath(node) {
@@ -406,6 +399,10 @@ TopologyTreeBuilder = function(userOptions) {
 				return getFillColor(node);
 			}
 		});
+	}
+
+	function unhighlightPath(node) {
+		vis.selectAll(".link").style("stroke", null);
 	}
 
 	function getEligibleTargetIds(node) {
@@ -425,24 +422,24 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function removeExitingNodes(visibleNodes, visibleLinks, actionNode) {
-		var removedNodes = visibleNodes.exit().transition().duration(treeTransitionDuration).attr("transform", function(node) {
+		var removedNodes = visibleNodes.exit().transition().duration(transitionDuration).attr("transform", function(node) {
 			return translateYX(actionNode);
 		}).remove();
 		removedNodes.select("circle").attr("r", 1e-6);
 		removedNodes.select("text").style("fill-opacity", 1e-6);
-		visibleLinks.exit().transition().duration(treeTransitionDuration).attr("d",
+		visibleLinks.exit().transition().duration(transitionDuration).attr("d",
 				d3.svg.diagonal().source(actionNode).target(actionNode).projection(projectYX)).remove();
 	}
 
 	function updateExistingNodes(visibleNodes, visibleLinks) {
-		var updatedNodes = visibleNodes.transition().duration(treeTransitionDuration).attr("transform", translateYX);
+		var updatedNodes = visibleNodes.transition().duration(transitionDuration).attr("transform", translateYX);
 		updatedNodes.select("circle").attr("r", getRadius);
 		updatedNodes.select("text").attr("text-anchor", function(node) {
 			return hasVisibleChildren(node) ? "end" : "start";
 		}).attr("x", function(node) {
 			return hasVisibleChildren(node) ? -12 : 12;
 		}).style("fill-opacity", getTextOpacity);
-		visibleLinks.transition().duration(treeTransitionDuration).attr("d", d3.svg.diagonal().projection(projectYX));
+		visibleLinks.transition().duration(transitionDuration).attr("d", d3.svg.diagonal().projection(projectYX));
 	}
 
 	function hasVisibleChildren(node) {

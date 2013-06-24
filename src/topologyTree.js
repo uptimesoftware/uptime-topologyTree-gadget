@@ -36,7 +36,12 @@ $(function() {
 	}
 
 	uptimeGadget.registerOnResizeHandler(function(dimensions) {
-		topologyTreeBuilder.resize(dimensions);
+		var controlsHeight = $("#treeControls").height();
+		$("body").height(dimensions.height);
+		$("#treeContainer").height(dimensions.height - controlsHeight);
+		// TODO: figure out where these magic 4 pixels are coming from
+		var treeDimensions = new UPTIME.pub.gadgets.Dimensions(dimensions.width - 4, dimensions.height - controlsHeight - 4);
+		topologyTreeBuilder.resize(treeDimensions);
 	});
 
 	function rebuildTree() {
@@ -48,8 +53,6 @@ $(function() {
 		clearNotificationPanel();
 		$("#progressBar").hide();
 		$("#treeControls").show();
-		$("#treeContainer").show();
-		$("#tooltip").show();
 		topologyTreeBuilder.buildTree(root);
 	}
 
@@ -60,7 +63,6 @@ $(function() {
 
 	function displayError(error) {
 		$("#progressBar").hide();
-		$("#tooltip").hide();
 		gadgetDimOn();
 		var notificationPanel = $("#notificationPanel").empty();
 		errorFormatter.getErrorBox(error, "Error retrieving data for Topology Tree.").appendTo(notificationPanel);
