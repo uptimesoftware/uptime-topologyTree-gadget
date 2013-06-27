@@ -24,6 +24,7 @@ TopologyTreeBuilder = function(userOptions) {
 
 	var transitionDuration = 500;
 
+	var textPadding = 4;
 	var expandedRadius = 4;
 	var minContractedRadius = 6;
 	var maxContractedRadius = 24;
@@ -90,7 +91,7 @@ TopologyTreeBuilder = function(userOptions) {
 		}
 		refreshableNodes = {};
 		rootNode = source;
-		rootColumnWidth = Math.min(4 + rootNode.elementName.length * charWidth, minColumnWidth);
+		rootColumnWidth = Math.min(getRadius(rootNode) + textPadding + rootNode.elementName.length * charWidth, minColumnWidth);
 		vis.attr("transform", "translate(" + rootColumnWidth + ",0)");
 		updateTree(rootNode);
 		scheduleNextRefresh();
@@ -592,7 +593,7 @@ TopologyTreeBuilder = function(userOptions) {
 		updatedNodes.select("text").attr("text-anchor", function(node) {
 			return hasVisibleChildren(node) ? "end" : "start";
 		}).attr("x", function(node) {
-			var offset = 4 + getRadius(node);
+			var offset = textPadding + getRadius(node);
 			return hasVisibleChildren(node) ? -offset : offset;
 		}).style("fill-opacity", 1);
 		visibleLinks.transition().duration(transitionDuration).attr("d", d3.svg.diagonal().projection(projectYX));
