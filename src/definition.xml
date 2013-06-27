@@ -11,6 +11,7 @@
 		<title>Topology Tree</title>
 		#includeResources(jquery,d3)
 		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" rel="stylesheet" />
+		<link href="__UPTIME_GADGET_BASE__/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
 		<link href="__UPTIME_GADGET_BASE__/topology.css" rel="stylesheet" />
 		<script src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
 		<script src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
@@ -23,9 +24,9 @@
 			<button id="expandAll">Expand All</button>
 			<button id="reset">Reset</button>
 			<div class="verticalDivider"></div>
-			<button id="zoomIn">+</button>
-			<button id="zoomReset">x</button>
-			<button id="zoomOut">-</button>
+			<button id="zoomIn"><span class="icon-zoom-in"></span></button>
+			<button id="zoomReset"><span class="icon-mail-reply"></span></button>
+			<button id="zoomOut"><span class="icon-zoom-out"></span></button>
 		</div>
 		<div id="treeContainer"><img id="progressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif" /></div>
 		<div id="tooltip"></div>
