@@ -40,7 +40,11 @@ TopologyTreeSourceCreator = function(userOptions) {
 			return elementLookup[topLevelParentId];
 		});
 		populateTopologicalParentFilter();
-		buildTree();
+		if (elements.length > 1) {
+			buildTree();
+		} else {
+			options.errorHandler("No topological dependencies defined in up.time.");
+		}
 	}
 
 	function getTopologicalElements() {
@@ -66,9 +70,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 	}
 
 	this.getSource = function() {
-		getTopologicalElements().then(function(elements) {
-			initializeAndBuildTree(elements);
-		}, options.errorHandler);
+		getTopologicalElements().then(initializeAndBuildTree, options.errorHandler);
 	};
 
 	function createTreeNode(element) {
