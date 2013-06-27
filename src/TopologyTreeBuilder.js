@@ -12,7 +12,7 @@ TopologyTreeBuilder = function(userOptions) {
 		throw new TypeError("errorHandler must be a function");
 	}
 
-	var rootColumnWidth = 56;
+	var rootColumnWidth = 60;
 	var minColumnWidth = 120;
 	var minRowHeight = 12;
 	var charWidth = 8;
@@ -90,7 +90,7 @@ TopologyTreeBuilder = function(userOptions) {
 		}
 		refreshableNodes = {};
 		rootNode = source;
-		rootColumnWidth = Math.min(rootNode.elementName.length * charWidth, minColumnWidth);
+		rootColumnWidth = Math.min(4 + rootNode.elementName.length * charWidth, minColumnWidth);
 		vis.attr("transform", "translate(" + rootColumnWidth + ",0)");
 		updateTree(rootNode);
 		scheduleNextRefresh();
