@@ -64,7 +64,7 @@ TopologyTreeBuilder = function(userOptions) {
 	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width", canvasDimensions.width * zoom)
 			.attr("height", canvasDimensions.height * zoom).attr("viewBox",
 					"0 0 " + canvasDimensions.width + " " + canvasDimensions.height).append("svg:g").attr("transform",
-					"translate(" + rootColumnWidth + ",0)");
+					"translate(" + rootColumnWidth + "," + minRowHeight + ")");
 
 	this.resize = function(dimensions) {
 		updateViewportSize(dimensions);
@@ -92,7 +92,7 @@ TopologyTreeBuilder = function(userOptions) {
 		refreshableNodes = {};
 		rootNode = source;
 		rootColumnWidth = Math.min(getRadius(rootNode) + textPadding + rootNode.elementName.length * charWidth, minColumnWidth);
-		vis.attr("transform", "translate(" + rootColumnWidth + ",0)");
+		vis.attr("transform", "translate(" + rootColumnWidth + "," + minRowHeight + ")");
 		updateTree(rootNode);
 		scheduleNextRefresh();
 	};
