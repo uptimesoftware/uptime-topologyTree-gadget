@@ -78,9 +78,11 @@ TopologyTreeBuilder = function(userOptions) {
 	};
 
 	this.buildTree = function(source) {
+		var firstBuild = false;
 		if (rootNode == null) {
 			source.oldX = tree.size()[0] / 2;
 			source.oldY = 0;
+			firstBuild = true;
 		} else {
 			source.oldX = rootNode.x;
 			source.oldY = rootNode.y;
@@ -93,7 +95,7 @@ TopologyTreeBuilder = function(userOptions) {
 		rootNode = source;
 		rootColumnWidth = Math.min(getRadius(rootNode) + textPadding + rootNode.elementName.length * charWidth, minColumnWidth);
 		vis.attr("transform", "translate(" + rootColumnWidth + "," + minRowHeight + ")");
-		updateTree(rootNode);
+		updateTree(rootNode, firstBuild);
 		scheduleNextRefresh();
 	};
 
@@ -210,29 +212,37 @@ TopologyTreeBuilder = function(userOptions) {
 
 	this.reset = function() {
 		if (rootNode != null) {
-			resetExpansions(rootNode, null);
+			$.each(resetExpansions(rootNode, null), function(i, updateNode) {
+				updateTree(updateNode);
+			});
+			scrollToNode(rootNode);
 		}
 	};
 
 	this.expandAll = function() {
 		if (rootNode != null) {
-			resetExpansions(rootNode, "full");
+			$.each(resetExpansions(rootNode, "full"), function(i, updateNode) {
+				updateTree(updateNode);
+			});
+			scrollToNode(rootNode);
 		}
 	};
 
 	function resetExpansions(node, value) {
 		if (!node.hasChildren) {
-			return;
+			return [];
 		}
-		if (node.expansion != value) {
-			removeD3Children(node);
-			node.expansion = value;
-			storeExpansion(node);
-			updateTree(node);
-		}
+		var toUpdate = [];
 		$.each(node.branches, function(i, child) {
-			resetExpansions(child, value);
+			$.merge(toUpdate, resetExpansions(child, value));
 		});
+		if (node.expansion == value) {
+			return toUpdate;
+		}
+		removeD3Children(node);
+		node.expansion = value;
+		storeExpansion(node);
+		return [ node ];
 	}
 
 	function storeExpansion(node) {
@@ -284,8 +294,6 @@ TopologyTreeBuilder = function(userOptions) {
 		updateExistingNodes(visibleNodes, visibleLinks);
 		removeExitingNodes(visibleNodes, visibleLinks, actionNode);
 		storeOldNodePositions(treeNodes);
-
-		scrollToNode(actionNode);
 	}
 
 	function getVisibleNodes(treeNodes) {
@@ -482,6 +490,7 @@ TopologyTreeBuilder = function(userOptions) {
 		}
 		storeExpansion(node);
 		updateTree(node);
+		scrollToNode(node);
 	}
 
 	function removeNode(node) {
