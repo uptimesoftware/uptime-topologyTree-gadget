@@ -15,7 +15,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 	var elementsWithNoParents = [];
 	var elementsWithChildren = [];
 	var topLevelParentIds = [];
-	
+
 	this.setTopLevelParentIds = function(newTopLevelParentIds) {
 		if ($.isArray(newTopLevelParentIds)) {
 			topLevelParentIds = newTopLevelParentIds;
@@ -35,6 +35,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 				elementsWithChildren.push(element.id);
 			}
 		});
+		// filter deleted elements out
 		topLevelParentIds = $.grep(topLevelParentIds, function(topLevelParentId) {
 			return elementLookup[topLevelParentId];
 		});
@@ -107,15 +108,13 @@ TopologyTreeSourceCreator = function(userOptions) {
 	}
 
 	function createRoot(treeLookup) {
-		if (topLevelParentIds.length == 0) {
-			topLevelParentIds = elementsWithNoParents;
-		}
+		var myTopLevelParentIds = topLevelParentIds.length == 0 ? elementsWithNoParents : topLevelParentIds;
 		var root;
-		if (topLevelParentIds.length == 1) {
-			root = treeLookup[topLevelParentIds[0]] = createTreeNode(elementLookup[topLevelParentIds[0]]);
+		if (myTopLevelParentIds.length == 1) {
+			root = treeLookup[myTopLevelParentIds[0]] = createTreeNode(elementLookup[myTopLevelParentIds[0]]);
 		} else {
 			root = treeLookup[0] = createRootPlaceholder();
-			$.each(topLevelParentIds, function(i, topLevelParentId) {
+			$.each(myTopLevelParentIds, function(i, topLevelParentId) {
 				var node = treeLookup[topLevelParentId] = createTreeNode(elementLookup[topLevelParentId]);
 				addChildNode(root, node);
 			});
@@ -148,8 +147,8 @@ TopologyTreeSourceCreator = function(userOptions) {
 		});
 		var topologicalParentFilter = $("#topologicalParentFilter").empty().prop('disabled', !uptimeGadget.isOwner());
 		$.each(parents, function(i, parent) {
-			$("<option></option>").val(parent.id).text(parent.name).prop("selected",
-					$.inArray(parent.id, topLevelParentIds) > -1).appendTo(topologicalParentFilter);
+			$("<option></option>").val(parent.id).text(parent.name)
+					.prop("selected", $.inArray(parent.id, topLevelParentIds) > -1).appendTo(topologicalParentFilter);
 		});
 		if (topologicalParentFilter.hasClass("chzn-done")) {
 			topologicalParentFilter.trigger("liszt:updated");
