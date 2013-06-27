@@ -17,7 +17,6 @@ TopologyTreeBuilder = function(userOptions) {
 	var minRowHeight = 12;
 	var charWidth = 8;
 
-	var zoom = 1.0;
 	var viewportDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
 	var minCanvasDimensions = getCanvasDimensions(1, 1);
 	var canvasDimensions = $.extend({}, minCanvasDimensions);
@@ -29,6 +28,46 @@ TopologyTreeBuilder = function(userOptions) {
 	var minContractedRadius = 6;
 	var maxContractedRadius = 24;
 	var massiveNodeRadius = 36;
+
+	var userSettingsKey = "uptime.TopologyTree." + uptimeGadget.getInstanceId();
+	var userSettings = loadSettings();
+
+	function loadSettings() {
+		var defaultSettings = {
+			expansions : {},
+			zoom : 1.0
+		};
+		if (window.localStorage) {
+			var userSettingsJson = window.localStorage.getItem(userSettingsKey);
+			try {
+				return $.extend(defaultSettings, JSON.parse(userSettingsJson));
+			} catch (e) {
+			}
+		}
+		return defaultSettings;
+	}
+
+	function saveSettings() {
+		if (window.localStorage) {
+			if (userSettings.expansions.length == 0 && userSettings.zoom == 1.0) {
+				window.localStorage.removeItem(userSettingsKey);
+			} else {
+				window.localStorage.setItem(userSettingsKey, JSON.stringify(userSettings));
+			}
+		}
+	}
+
+	function getExpansion(node) {
+		return userSettings.expansions[node.elementId];
+	}
+
+	function setExpansion(node, expansion) {
+		if (expansion) {
+			userSettings.expansions[node.elementId] = expansion;
+		} else {
+			delete userSettings.expansions[node.elementId];
+		}
+	}
 
 	function translateYX(d) {
 		return "translate(" + d.y + "," + d.x + ")";
@@ -61,10 +100,10 @@ TopologyTreeBuilder = function(userOptions) {
 		return normalSeparation;
 	});
 
-	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width", canvasDimensions.width * zoom)
-			.attr("height", canvasDimensions.height * zoom).attr("viewBox",
-					"0 0 " + canvasDimensions.width + " " + canvasDimensions.height).append("svg:g").attr("transform",
-					"translate(" + rootColumnWidth + "," + minRowHeight + ")");
+	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width",
+			canvasDimensions.width * userSettings.zoom).attr("height", canvasDimensions.height * userSettings.zoom).attr(
+			"viewBox", "0 0 " + canvasDimensions.width + " " + canvasDimensions.height).append("svg:g").attr("transform",
+			"translate(" + rootColumnWidth + "," + minRowHeight + ")");
 
 	this.resize = function(dimensions) {
 		updateViewportSize(dimensions);
@@ -100,18 +139,24 @@ TopologyTreeBuilder = function(userOptions) {
 	};
 
 	this.zoomIn = function() {
-		zoom *= 1.1;
-		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom);
+		userSettings.zoom *= 1.1;
+		saveSettings();
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * userSettings.zoom).attr("height",
+				canvasDimensions.height * userSettings.zoom);
 	};
 
 	this.zoomOut = function() {
-		zoom /= 1.1;
-		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom);
+		userSettings.zoom /= 1.1;
+		saveSettings();
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * userSettings.zoom).attr("height",
+				canvasDimensions.height * userSettings.zoom);
 	};
 
 	this.zoomReset = function() {
-		zoom = 1.0;
-		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom);
+		userSettings.zoom = 1.0;
+		saveSettings();
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * userSettings.zoom).attr("height",
+				canvasDimensions.height * userSettings.zoom);
 	};
 
 	function scheduleNextRefresh() {
@@ -216,6 +261,7 @@ TopologyTreeBuilder = function(userOptions) {
 				updateTree(updateNode);
 			});
 			scrollToNode(rootNode);
+			saveSettings();
 		}
 	};
 
@@ -225,6 +271,7 @@ TopologyTreeBuilder = function(userOptions) {
 				updateTree(updateNode);
 			});
 			scrollToNode(rootNode);
+			saveSettings();
 		}
 	};
 
@@ -236,35 +283,12 @@ TopologyTreeBuilder = function(userOptions) {
 		$.each(node.branches, function(i, child) {
 			$.merge(toUpdate, resetExpansions(child, value));
 		});
-		if (node.expansion == value) {
+		if (getExpansion(node) == value) {
 			return toUpdate;
 		}
+		setExpansion(node, value);
 		removeD3Children(node);
-		node.expansion = value;
-		storeExpansion(node);
 		return [ node ];
-	}
-
-	function storeExpansion(node) {
-		if (!window.localStorage || !node.hasChildren) {
-			return;
-		}
-		if (!node.expansion) {
-			window.localStorage.removeItem(expansionStorageKey(node));
-			return;
-		}
-		window.localStorage.setItem(expansionStorageKey(node), node.expansion);
-	}
-
-	function loadStoredExpansion(node) {
-		if (!window.localStorage || !node.hasChildren || node.expansion) {
-			return;
-		}
-		node.expansion = window.localStorage.getItem(expansionStorageKey(node));
-	}
-
-	function expansionStorageKey(node) {
-		return "uptime.TopologyTree." + uptimeGadget.getInstanceId() + "." + node.elementId;
 	}
 
 	function updateViewportSize(dimensions) {
@@ -274,8 +298,9 @@ TopologyTreeBuilder = function(userOptions) {
 	function updateCanvasSize(dimensions) {
 		canvasDimensions = new UPTIME.pub.gadgets.Dimensions(Math.max(dimensions.width, minCanvasDimensions.width), Math.max(
 				dimensions.height, minCanvasDimensions.height));
-		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom)
-				.attr("viewBox", "0 0 " + canvasDimensions.width + " " + canvasDimensions.height);
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * userSettings.zoom).attr("height",
+				canvasDimensions.height * userSettings.zoom).attr("viewBox",
+				"0 0 " + canvasDimensions.width + " " + canvasDimensions.height);
 	}
 
 	function updateTree(actionNode) {
@@ -431,12 +456,12 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function getChildren(node) {
-		loadStoredExpansion(node);
-		if (!node.hasChildren || node.expansion == "none") {
+		var expansion = getExpansion(node);
+		if (!node.hasChildren || expansion == "none") {
 			return [];
 		}
 		var children = $.merge([], node.branches);
-		if (node.expansion == "full") {
+		if (expansion == "full") {
 			return $.merge(children, node.leaves);
 		}
 		return children;
@@ -463,8 +488,9 @@ TopologyTreeBuilder = function(userOptions) {
 
 	function getRadius(node) {
 		var r = expandedRadius;
-		if (node.hasChildren && node.expansion != "full") {
-			if (node.expansion == "none") {
+		var expansion = getExpansion(node);
+		if (node.hasChildren && expansion != "full") {
+			if (expansion == "none") {
 				r = minContractedRadius + (node.branches.length + node.leaves.length) * 0.1;
 			} else if (node.leaves.length > 0) {
 				r = minContractedRadius + node.leaves.length * 0.1;
@@ -481,14 +507,17 @@ TopologyTreeBuilder = function(userOptions) {
 			return;
 		}
 		removeD3Children(node);
-		if (node.expansion == "full") {
-			node.expansion = "none";
-		} else if (node.expansion == "none") {
-			node.expansion = (node.branches.length > 0 && node.leaves.length > 0) ? "partial" : "full";
+		var expansion = getExpansion(node);
+		// for grandparents: null -> full -> none -> etc (null means partial)
+		// for parents: null -> full -> etc (null means none)
+		if (expansion == "full") {
+			setExpansion(node, (node.branches.length > 0 && node.leaves.length > 0) ? "none" : null);
+		} else if (expansion == "none") {
+			setExpansion(node, (node.branches.length > 0 && node.leaves.length > 0) ? null : "full");
 		} else {
-			node.expansion = "full";
+			setExpansion(node, "full");
 		}
-		storeExpansion(node);
+		saveSettings();
 		updateTree(node);
 		scrollToNode(node);
 	}
@@ -510,7 +539,7 @@ TopologyTreeBuilder = function(userOptions) {
 			node.parent.branches = $.grep(node.parent.branches, function(branch) {
 				return branch != node;
 			});
-			if (node.parent.expansion != "none") {
+			if (getExpansion(node.parent) != "none") {
 				removeD3Children(node.parent);
 				updateTree(node.parent);
 			}
@@ -518,7 +547,7 @@ TopologyTreeBuilder = function(userOptions) {
 			node.parent.leaves = $.grep(node.parent.leaves, function(leaf) {
 				return leaf != node;
 			});
-			if (node.parent.expansion == "full") {
+			if (getExpansion(node.parent) == "full") {
 				removeD3Children(node.parent);
 				updateTree(node.parent);
 			}
@@ -631,7 +660,8 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function hasVisibleChildren(node) {
-		return node.hasChildren && (node.expansion == "full" || (node.expansion != "none" && node.branches.length > 0));
+		var expansion = getExpansion(node);
+		return node.hasChildren && (expansion == "full" || (expansion != "none" && node.branches.length > 0));
 	}
 
 	function createNewNodes(visibleNodes, visibleLinks, actionNode) {
