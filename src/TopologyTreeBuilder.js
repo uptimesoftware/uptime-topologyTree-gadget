@@ -117,29 +117,66 @@ TopologyTreeBuilder = function(userOptions) {
 		}
 	}
 
-	function refreshTree() {
-		refreshTimeoutId = null;
-		var promises = [];
-		$.each(refreshableNodes, function(i, node) {
-			// we're redundantly getting element statuses where a single element
-			// appears as multiple different nodes in the tree, but oh well
-			promises.push(refreshElementStatus(node));
+	function createElementFilter(nodeMultimap) {
+		var deferred = UPTIME.pub.gadgets.promises.defer();
+		$.ajax("/api/v1/elements/filter", {
+			type : 'POST',
+			contentType : 'application/json',
+			data : JSON.stringify({
+				ids : $.map(nodeMultimap, function(nodes, elementId) {
+					return elementId;
+				})
+			}),
+			processData : false,
+			dataType : 'json'
+		}).done(function(data, textStatus, jqXHR) {
+			deferred.resolve(data);
+		}).fail(function(jqXHR, textStatus, errorThrown) {
+			deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
 		});
-		UPTIME.pub.gadgets.promises.all(promises).then(options.okHandler, options.errorHandler).then(scheduleNextRefresh);
+		return deferred.promise;
 	}
 
-	function refreshElementStatus(node) {
+	function refreshTree() {
+		refreshTimeoutId = null;
+		if (Object.keys(refreshableNodes).length == 0) {
+			scheduleNextRefresh();
+			return;
+		}
+		var nodeMultimap = {};
+		$.each(refreshableNodes, function(i, node) {
+			if (typeof nodeMultimap[node.elementId] == "undefined") {
+				nodeMultimap[node.elementId] = [];
+			}
+			nodeMultimap[node.elementId].push(node);
+		});
+		createElementFilter(nodeMultimap).then(function(filter) {
+			return refreshElementStatus(filter, nodeMultimap);
+		}).then(options.okHandler, options.errorHandler).then(scheduleNextRefresh);
+	}
+
+	function refreshElementStatus(filter, nodeMultimap) {
 		var deferred = UPTIME.pub.gadgets.promises.defer();
-		$.ajax("/api/v1/elements/" + node.elementId + "/status", {
+		$.ajax("/api/v1/elements/filter/" + filter.id + "/status", {
 			cache : false
 		}).done(function(data, textStatus, jqXHR) {
-			deferred.resolve(updateNodeStatus(node, data));
+			$.each(data, function(i, status) {
+				if (typeof nodeMultimap[status.id] != "undefined") {
+					$.each(nodeMultimap[status.id], function(j, node) {
+						updateNodeStatus(node, status);
+					});
+					delete nodeMultimap[status.id];
+				}
+			});
+			// delete statuses we asked for but didn't get back
+			$.each(nodeMultimap, function(i, nodes) {
+				$.each(nodes, function(j, node) {
+					updateNodeStatus(node);
+				});
+			});
+			deferred.resolve(data);
 		}).fail(function(jqXHR, textStatus, errorThrown) {
-			if (jqXHR.status == 404) {
-				deferred.resolve(updateNodeStatus(node));
-			} else {
-				deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
-			}
+			deferred.reject(UPTIME.pub.errors.toDisplayableJQueryAjaxError(jqXHR, textStatus, errorThrown, this));
 		});
 		return deferred.promise;
 	}
@@ -249,15 +286,39 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function getVisibleNodes(treeNodes) {
-		return vis.selectAll("g.node").data(treeNodes, function(node) {
+		var newNodes = {};
+		var visibleNodes = vis.selectAll("g.node").data(treeNodes, function(node) {
 			if (!node.id) {
 				node.id = ++currNodeId;
 				if (node.elementId) {
-					refreshableNodes[node.id] = node;
+					newNodes[node.id] = node;
 				}
 			}
 			return node.id;
 		});
+		addToRefreshableNodes(newNodes);
+		return visibleNodes;
+	}
+
+	function addToRefreshableNodes(nodes) {
+		if (nodes.length == 0) {
+			return;
+		}
+		var nodeMultimap = {};
+		$.each(nodes, function(i, node) {
+			if (!refreshableNodes[node.id]) {
+				refreshableNodes[node.id] = node;
+				if (typeof nodeMultimap[node.elementId] == "undefined") {
+					nodeMultimap[node.elementId] = [];
+				}
+				nodeMultimap[node.elementId].push(node);
+			}
+		});
+		if (Object.keys(nodeMultimap).length > 0) {
+			createElementFilter(nodeMultimap).then(function(filter) {
+				return refreshElementStatus(filter, nodeMultimap);
+			});
+		}
 	}
 
 	function getVisibleLinks(treeNodes) {
@@ -339,9 +400,6 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function getChildren(node) {
-		if (node.elementId && !refreshableNodes[node.id]) {
-			refreshElementStatus(node);
-		}
 		loadStoredExpansion(node);
 		if (!node.hasChildren || node.expansion == "none") {
 			return [];
