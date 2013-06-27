@@ -284,6 +284,8 @@ TopologyTreeBuilder = function(userOptions) {
 		updateExistingNodes(visibleNodes, visibleLinks);
 		removeExitingNodes(visibleNodes, visibleLinks, actionNode);
 		storeOldNodePositions(treeNodes);
+
+		scrollToNode(actionNode);
 	}
 
 	function getVisibleNodes(treeNodes) {
@@ -398,6 +400,26 @@ TopologyTreeBuilder = function(userOptions) {
 	function getTreeSize(treeHeight) {
 		return [ Math.max(canvasDimensions.height - minRowHeight * 2, 1),
 				Math.max(canvasDimensions.width - rootColumnWidth - getColumnWidth(treeHeight), 1) ];
+	}
+
+	function scrollToNode(node) {
+		var treeContainer = $("#treeContainer");
+		var scrollTop = treeContainer.scrollTop();
+		var scrollLeft = treeContainer.scrollLeft();
+		if (canvasDimensions.height > viewportDimensions.height) {
+			if (node.x > scrollTop + viewportDimensions.height - minRowHeight * 5 || scrollTop > node.x + minRowHeight * 5) {
+				scrollTop = Math.min(Math.max(node.x - viewportDimensions.height / 2, 0), canvasDimensions.height
+						- viewportDimensions.height);
+			}
+		}
+		if (canvasDimensions.width > viewportDimensions.width) {
+			scrollLeft = Math.min(Math.max(node.y - viewportDimensions.width / 3, 0), canvasDimensions.width
+					- viewportDimensions.width);
+		}
+		treeContainer.animate({
+			scrollTop : scrollTop,
+			scrollLeft : scrollLeft
+		}, transitionDuration);
 	}
 
 	function getChildren(node) {
