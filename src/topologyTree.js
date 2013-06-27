@@ -17,7 +17,7 @@ $(function() {
 	});
 
 	uptimeGadget.registerOnLoadHandler(function(onLoadData) {
-		topologyTreeBuilder.resize(onLoadData.dimensions);
+		resizeTree(onLoadData.dimensions);
 		if (onLoadData.hasPreloadedSettings) {
 			processSettings(onLoadData.settings);
 		} else {
@@ -27,22 +27,20 @@ $(function() {
 
 	function processSettings(settings) {
 		if (settings) {
-			if (typeof settings.showLabels == "boolean") {
-				$("#showLabels").prop("selected", settings.showLabels);
-			}
 			sourceBuilder.setTopLevelParentIds(settings.topLevelParentIds);
 		}
 		rebuildTree();
 	}
 
-	uptimeGadget.registerOnResizeHandler(function(dimensions) {
+	uptimeGadget.registerOnResizeHandler(resizeTree);
+	
+	function resizeTree(dimensions) {
 		var controlsHeight = $("#treeControls").height();
-		$("body").height(dimensions.height);
-		$("#treeContainer").height(dimensions.height - controlsHeight);
-		// TODO: figure out where these magic 4 pixels are coming from
-		var treeDimensions = new UPTIME.pub.gadgets.Dimensions(dimensions.width - 4, dimensions.height - controlsHeight - 4);
+		$("#treeContainer").height(dimensions.height - controlsHeight).width(dimensions.width);
+		// TODO: figure out where these magic 20+2 pixels are coming from
+		var treeDimensions = new UPTIME.pub.gadgets.Dimensions(dimensions.width - 20, dimensions.height - controlsHeight - 2);
 		topologyTreeBuilder.resize(treeDimensions);
-	});
+	}
 
 	function rebuildTree() {
 		sourceBuilder.getSource();
@@ -89,9 +87,8 @@ $(function() {
 
 	$("#reset").click(topologyTreeBuilder.reset);
 	$("#expandAll").click(topologyTreeBuilder.expandAll);
-	$("#showLabels").change(function() {
-		var showLabels = $(this).is(":checked");
-		topologyTreeBuilder.setShowLabels(showLabels);
-	});
+	$("#zoomIn").click(topologyTreeBuilder.zoomIn);
+	$("#zoomReset").click(topologyTreeBuilder.zoomReset);
+	$("#zoomOut").click(topologyTreeBuilder.zoomOut);
 
 });

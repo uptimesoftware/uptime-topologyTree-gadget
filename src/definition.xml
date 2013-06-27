@@ -23,7 +23,9 @@
 			<button id="expandAll">Expand All</button>
 			<button id="reset">Reset</button>
 			<div class="verticalDivider"></div>
-			<input type="checkbox" id="showLabels" checked="checked" /><label for="showLabels">Show Labels</label>
+			<button id="zoomIn">+</button>
+			<button id="zoomReset">x</button>
+			<button id="zoomOut">-</button>
 		</div>
 		<div id="treeContainer"><img id="progressBar" src="__UPTIME_GADGET_BASE__/InProgress.gif" /></div>
 		<div id="tooltip"></div>

@@ -12,16 +12,22 @@ TopologyTreeBuilder = function(userOptions) {
 		throw new TypeError("errorHandler must be a function");
 	}
 
-	var treeMargins = [ 96, 5, 126, 5 ];
-	var visDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
-	var treeDimensions = toTreeDimensions(visDimensions);
+	var rootColumnWidth = 56;
+	var minColumnWidth = 120;
+	var minRowHeight = 12;
+	var charWidth = 8;
+
+	var zoom = 1.0;
+	var viewportDimensions = new UPTIME.pub.gadgets.Dimensions(100, 100);
+	var minCanvasDimensions = getCanvasDimensions(1, 1);
+	var canvasDimensions = $.extend({}, minCanvasDimensions);
 
 	var transitionDuration = 500;
 
 	var expandedRadius = 4;
 	var minContractedRadius = 6;
-	var maxContractedRadius = 20;
-	var massiveNodeRadius = 30;
+	var maxContractedRadius = 24;
+	var massiveNodeRadius = 36;
 
 	function translateYX(d) {
 		return "translate(" + d.y + "," + d.x + ")";
@@ -38,60 +44,71 @@ TopologyTreeBuilder = function(userOptions) {
 		};
 	}
 
-	var root = null;
+	var rootNode = null;
 	var refreshableNodes = {};
 	var refreshTimeoutId = null;
 
 	var currNodeId = 0;
-	var tree = d3.layout.tree().size([ treeDimensions.height, treeDimensions.width ]).children(getChildren).sort(function(a, b) {
+	var tree = d3.layout.tree().size(getTreeSize(1)).children(getChildren).sort(function(a, b) {
 		return naturalSort(a.elementName, b.elementName);
+	}).separation(function(a, b) {
+		var normalSeparation = a.parent == b.parent ? 1 : 2;
+		var extraSeparation = getRadius(a) * 2 + getRadius(b) * 2 - minRowHeight * 2;
+		if (extraSeparation > 0) {
+			return normalSeparation + extraSeparation / minRowHeight;
+		}
+		return normalSeparation;
 	});
 
-	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width", visDimensions.width).attr(
-			"height", visDimensions.height).attr("viewBox", "0 0 " + visDimensions.width + " " + visDimensions.height).append(
-			"svg:g").attr("transform", "translate(" + treeMargins[0] + "," + treeMargins[1] + ")");
-
-	var showLabels = true;
-
-	this.setShowLabels = function(newShowLabels) {
-		if (typeof newShowLabels == "boolean" && showLabels != newShowLabels) {
-			showLabels = newShowLabels;
-			vis.selectAll("g.node text").style("fill-opacity", getTextOpacity);
-		}
-	};
+	var vis = d3.select("#treeContainer").append("svg:svg").attr("id", "treeCanvas").attr("width", canvasDimensions.width * zoom)
+			.attr("height", canvasDimensions.height * zoom).attr("viewBox",
+					"0 0 " + canvasDimensions.width + " " + canvasDimensions.height).append("svg:g").attr("transform",
+					"translate(" + rootColumnWidth + ",0)");
 
 	this.resize = function(dimensions) {
-
-		visDimensions = toVisDimensions(dimensions);
-		treeDimensions = toTreeDimensions(visDimensions);
-
-		d3.select("#treeCanvas").attr("width", visDimensions.width).attr("height", visDimensions.height).attr("viewBox",
-				"0 0 " + visDimensions.width + " " + visDimensions.height);
-
-		tree.size([ treeDimensions.height, treeDimensions.width ]);
-
-		if (root != null) {
-			updateTree(root);
+		updateViewportSize(dimensions);
+		if (rootNode == null) {
+			updateCanvasSize(dimensions);
+			tree.size(getTreeSize(1));
+		} else {
+			// updateTree() will internally update canvas size where needed
+			updateTree(rootNode);
 		}
-
 	};
 
 	this.buildTree = function(source) {
-		if (root == null) {
-			source.oldX = treeDimensions.height / 2;
-			source.oldY = 10;
+		if (rootNode == null) {
+			source.oldX = tree.size()[0] / 2;
+			source.oldY = 0;
 		} else {
-			source.oldX = root.x;
-			source.oldY = root.y;
+			source.oldX = rootNode.x;
+			source.oldY = rootNode.y;
 		}
 		if (refreshTimeoutId != null) {
 			clearTimeout(refreshTimeoutId);
 			refreshTimeoutId = null;
 		}
 		refreshableNodes = {};
-		root = source;
-		updateTree(root);
+		rootNode = source;
+		rootColumnWidth = Math.min(rootNode.elementName.length * charWidth, minColumnWidth);
+		vis.attr("transform", "translate(" + rootColumnWidth + ",0)");
+		updateTree(rootNode);
 		scheduleNextRefresh();
+	};
+
+	this.zoomIn = function() {
+		zoom *= 1.1;
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom);
+	};
+
+	this.zoomOut = function() {
+		zoom /= 1.1;
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom);
+	};
+
+	this.zoomReset = function() {
+		zoom = 1.0;
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom);
 	};
 
 	function scheduleNextRefresh() {
@@ -154,11 +171,15 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	this.reset = function() {
-		resetExpansions(root, null);
+		if (rootNode != null) {
+			resetExpansions(rootNode, null);
+		}
 	};
 
 	this.expandAll = function() {
-		resetExpansions(root, "full");
+		if (rootNode != null) {
+			resetExpansions(rootNode, "full");
+		}
 	};
 
 	function resetExpansions(node, value) {
@@ -198,11 +219,37 @@ TopologyTreeBuilder = function(userOptions) {
 		return "uptime.TopologyTree." + uptimeGadget.getInstanceId() + "." + node.elementId;
 	}
 
+	function updateViewportSize(dimensions) {
+		viewportDimensions = $.extend({}, dimensions);
+	}
+
+	function updateCanvasSize(dimensions) {
+		canvasDimensions = new UPTIME.pub.gadgets.Dimensions(Math.max(dimensions.width, minCanvasDimensions.width), Math.max(
+				dimensions.height, minCanvasDimensions.height));
+		d3.select("#treeCanvas").attr("width", canvasDimensions.width * zoom).attr("height", canvasDimensions.height * zoom)
+				.attr("viewBox", "0 0 " + canvasDimensions.width + " " + canvasDimensions.height);
+	}
+
 	function updateTree(actionNode) {
-		var treeNodes = tree.nodes(root).reverse();
+		// tell D3 to rebuild .parent, .children, .depth, .x and .y
+		var treeNodes = tree.nodes(rootNode).reverse();
+
+		// try to resize the tree to avoid node and label collisions
+		treeNodes = autoResizeCanvasAndTree(treeNodes);
 
 		// select the visible nodes/links and make sure they have unique ids
-		var visibleNodes = vis.selectAll("g.node").data(treeNodes, function(node) {
+		var visibleNodes = getVisibleNodes(treeNodes);
+		var visibleLinks = getVisibleLinks(treeNodes);
+
+		// enter/update/exit nodes with animation
+		createNewNodes(visibleNodes, visibleLinks, actionNode);
+		updateExistingNodes(visibleNodes, visibleLinks);
+		removeExitingNodes(visibleNodes, visibleLinks, actionNode);
+		storeOldNodePositions(treeNodes);
+	}
+
+	function getVisibleNodes(treeNodes) {
+		return vis.selectAll("g.node").data(treeNodes, function(node) {
 			if (!node.id) {
 				node.id = ++currNodeId;
 				if (node.elementId) {
@@ -211,27 +258,84 @@ TopologyTreeBuilder = function(userOptions) {
 			}
 			return node.id;
 		});
-		var visibleLinks = vis.selectAll("path.link").data(tree.links(treeNodes), function(link) {
+	}
+
+	function getVisibleLinks(treeNodes) {
+		return vis.selectAll("path.link").data(tree.links(treeNodes), function(link) {
 			return link.source.id + '.' + link.target.id;
 		});
+	}
 
-		createNewNodes(visibleNodes, visibleLinks, actionNode);
-		updateExistingNodes(visibleNodes, visibleLinks);
-		removeExitingNodes(visibleNodes, visibleLinks, actionNode);
+	function storeOldNodePositions(treeNodes) {
 		treeNodes.forEach(function(node) {
 			node.oldX = node.x;
 			node.oldY = node.y;
 		});
 	}
 
-	function toVisDimensions(dimensions) {
-		return new UPTIME.pub.gadgets.Dimensions(Math.max(100, dimensions.width), Math.max(100, dimensions.height));
+	function autoResizeCanvasAndTree(treeNodes) {
+		var treeHeight = 1;
+		var treeWidth = 1;
+		var treeWidthsByDepth = {
+			0 : 1
+		};
+		treeNodes.forEach(function(node) {
+			if (treeHeight < node.depth + 1) {
+				treeHeight = node.depth + 1;
+			}
+			if (node.children && node.children.length > 0) {
+				// This hacky breadth calculation assumes 1 node = 1 row and 1
+				// cluster gap = 1 row (standard D3 separation)
+				// NB: this breaks if you have an unbalanced tree with oddly-
+				// separated clusters
+				if (typeof treeWidthsByDepth[node.depth + 1] == "undefined") {
+					treeWidthsByDepth[node.depth + 1] = node.children.length;
+				} else {
+					treeWidthsByDepth[node.depth + 1] += node.children.length + 1;
+				}
+				if (treeWidth < treeWidthsByDepth[node.depth + 1]) {
+					treeWidth = treeWidthsByDepth[node.depth + 1];
+				}
+			}
+		});
+
+		var newCanvasDimensions = getCanvasDimensions(treeHeight, treeWidth);
+		if (newCanvasDimensions.width != canvasDimensions.width || newCanvasDimensions.height != canvasDimensions.height) {
+			updateCanvasSize(newCanvasDimensions);
+		}
+
+		var oldTreeSize = tree.size();
+		var newTreeSize = getTreeSize(treeHeight);
+		if (oldTreeSize[0] != newTreeSize[0] || oldTreeSize[1] != newTreeSize[1]) {
+			tree.size(newTreeSize);
+			var xTranslate = newTreeSize[0] / oldTreeSize[0];
+			var yTranslate = newTreeSize[1] / oldTreeSize[1];
+			treeNodes.forEach(function(node) {
+				node.x = Math.floor(node.x * xTranslate);
+				node.y = Math.floor(node.y * yTranslate);
+			});
+		}
+
+		return treeNodes;
 	}
 
-	function toTreeDimensions(dimensions) {
-		var w = dimensions.width - treeMargins[0] - treeMargins[2];
-		var h = dimensions.height - treeMargins[1] - treeMargins[3];
-		return new UPTIME.pub.gadgets.Dimensions(w, h);
+	// height and width in nodes, returns pixels (viewportDimensions must be
+	// set)
+	function getCanvasDimensions(treeHeight, treeWidth) {
+		return new UPTIME.pub.gadgets.Dimensions(Math
+				.max(rootColumnWidth + treeHeight * minColumnWidth, viewportDimensions.width), Math.max(treeWidth * minRowHeight,
+				viewportDimensions.height));
+	}
+
+	// height in nodes, returns pixels (canvasDimensions must be set)
+	function getColumnWidth(treeHeight) {
+		return Math.max(Math.floor((canvasDimensions.width - rootColumnWidth) / treeHeight), minColumnWidth);
+	}
+
+	// height in nodes, returns pixels (canvasDimensions must be set)
+	function getTreeSize(treeHeight) {
+		return [ Math.max(canvasDimensions.height - minRowHeight * 2, 1),
+				Math.max(canvasDimensions.width - rootColumnWidth - getColumnWidth(treeHeight), 1) ];
 	}
 
 	function getChildren(node) {
@@ -414,13 +518,6 @@ TopologyTreeBuilder = function(userOptions) {
 		return eligibleIds;
 	}
 
-	function getTextOpacity(node) {
-		if (node.hasChildren || showLabels) {
-			return 1;
-		}
-		return 1e-6;
-	}
-
 	function removeExitingNodes(visibleNodes, visibleLinks, actionNode) {
 		var removedNodes = visibleNodes.exit().transition().duration(transitionDuration).attr("transform", function(node) {
 			return translateYX(actionNode);
@@ -437,8 +534,9 @@ TopologyTreeBuilder = function(userOptions) {
 		updatedNodes.select("text").attr("text-anchor", function(node) {
 			return hasVisibleChildren(node) ? "end" : "start";
 		}).attr("x", function(node) {
-			return hasVisibleChildren(node) ? -12 : 12;
-		}).style("fill-opacity", getTextOpacity);
+			var offset = 4 + getRadius(node);
+			return hasVisibleChildren(node) ? -offset : offset;
+		}).style("fill-opacity", 1);
 		visibleLinks.transition().duration(transitionDuration).attr("d", d3.svg.diagonal().projection(projectYX));
 	}
 
