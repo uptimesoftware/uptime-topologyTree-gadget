@@ -456,12 +456,11 @@ TopologyTreeBuilder = function(userOptions) {
 	}
 
 	function getChildren(node) {
-		var expansion = getExpansion(node);
-		if (!node.hasChildren || expansion == "none") {
+		if (!node.hasChildren || !hasVisibleChildren(node)) {
 			return [];
 		}
 		var children = $.merge([], node.branches);
-		if (expansion == "full") {
+		if (getExpansion(node) == "full") {
 			return $.merge(children, node.leaves);
 		}
 		return children;
@@ -539,7 +538,7 @@ TopologyTreeBuilder = function(userOptions) {
 			node.parent.branches = $.grep(node.parent.branches, function(branch) {
 				return branch != node;
 			});
-			if (getExpansion(node.parent) != "none") {
+			if (hasVisibleExpansion(node.parent)) {
 				removeD3Children(node.parent);
 				updateTree(node.parent);
 			}
