@@ -155,7 +155,9 @@ TopologyTreeSourceCreator = function(userOptions) {
 		if (topologicalParentFilter.hasClass("chzn-done")) {
 			topologicalParentFilter.trigger("liszt:updated");
 		} else {
-			topologicalParentFilter.chosen().change(updateTopLevelParents);
+			topologicalParentFilter.chosen({
+				width : "95%"
+			}).change(updateTopLevelParents);
 		}
 	}
 

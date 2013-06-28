@@ -8,13 +8,21 @@
 
 #treeControls {
 	float: right;
-	width: 500px;
+	width: 100%;
 	display: none;
 	padding: 5px 5px 0 0;
 }
 
 #topologicalParentFilter {
 	width: 500px;
+}
+
+.chzn-container {
+	float: right;
+}
+
+.chzn-container .search-field, .chzn-container .search-field input {
+	width: 90% !important;
 }
 
 button, input[type="checkbox"], label {
