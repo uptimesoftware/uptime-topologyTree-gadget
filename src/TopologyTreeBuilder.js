@@ -373,26 +373,24 @@ TopologyTreeBuilder = function(userOptions) {
 	function autoResizeCanvasAndTree(treeNodes) {
 		var treeHeight = 1;
 		var treeWidth = 1;
-		var treeWidthsByDepth = {
-			0 : 1
-		};
+		var treeWidthsByDepth = {};
 		treeNodes.forEach(function(node) {
 			if (treeHeight < node.depth + 1) {
 				treeHeight = node.depth + 1;
 			}
-			if (node.children && node.children.length > 0) {
-				// This hacky breadth calculation assumes 1 node = 1 row and 1
-				// cluster gap = 1 row (standard D3 separation)
-				// NB: this breaks if you have an unbalanced tree with oddly-
-				// separated clusters
-				if (typeof treeWidthsByDepth[node.depth + 1] == "undefined") {
-					treeWidthsByDepth[node.depth + 1] = node.children.length;
-				} else {
-					treeWidthsByDepth[node.depth + 1] += node.children.length + 1;
-				}
-				if (treeWidth < treeWidthsByDepth[node.depth + 1]) {
-					treeWidth = treeWidthsByDepth[node.depth + 1];
-				}
+			// This hacky breadth calculation assumes 1 leaf = 1 fully expanded
+			// branch = 1 row and everything else is 2.
+			// NB: this breaks if you have an unbalanced tree with oddly-
+			// separated clusters
+			if (typeof treeWidthsByDepth[node.depth] == "undefined") {
+				treeWidthsByDepth[node.depth] = 0;
+			}
+			treeWidthsByDepth[node.depth]++;
+			if (node.hasChildren && getExpansion(node) != "full") {
+				treeWidthsByDepth[node.depth]++;
+			}
+			if (treeWidth < treeWidthsByDepth[node.depth]) {
+				treeWidth = treeWidthsByDepth[node.depth];
 			}
 		});
 
