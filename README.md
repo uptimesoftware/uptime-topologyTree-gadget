@@ -1,6 +1,6 @@
 # Topology Gadget
 
-> up.time gadget to display Topologies.
+> Easily view the health of your infrastructure's core topology using this interactive topology gadget. View the entire topology or pick and choose which segments to focus on.
 
 ## Getting Started
 This gadget is built using Grunt `~0.4.1`.
