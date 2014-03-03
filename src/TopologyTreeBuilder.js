@@ -209,7 +209,7 @@ TopologyTreeBuilder = function(userOptions) {
 			cache : false
 		}).done(function(data, textStatus, jqXHR) {
 			$.each(data, function(i, status) {
-				if (typeof nodeMultimap[status.id] != "undefined") {
+				if ((typeof nodeMultimap[status.id] != "undefined") && (status.isMonitored)) {
 					$.each(nodeMultimap[status.id], function(j, node) {
 						updateNodeStatus(node, status);
 					});
@@ -536,7 +536,7 @@ TopologyTreeBuilder = function(userOptions) {
 			node.parent.branches = $.grep(node.parent.branches, function(branch) {
 				return branch != node;
 			});
-			if (hasVisibleExpansion(node.parent)) {
+			if (hasVisibleChildren(node.parent)) {
 				removeD3Children(node.parent);
 				updateTree(node.parent);
 			}
