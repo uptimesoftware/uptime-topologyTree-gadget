@@ -4,7 +4,7 @@
 		description="Easily view the health of your infrastructure's core topology using this interactive topology gadget. View the entire topology or pick and choose which segments to focus on."
 		thumbnail="thumbs.png" />
 	<gadget_version>
-		1.0
+		<%= pkg.gadget_version %>
 	</gadget_version>
 	<grid_info>
 		<supported_versions>
@@ -30,10 +30,10 @@
 		<link href="__UPTIME_GADGET_BASE__/chosen/chosen.css" rel="stylesheet" />
 		<link href="__UPTIME_GADGET_BASE__/font-awesome/css/font-awesome.min.css" rel="stylesheet" />
 		<link href="__UPTIME_GADGET_BASE__/topology.css" rel="stylesheet" />
-		<script src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js"></script>
-		<script src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js"></script>
-		<script src="__UPTIME_GADGET_BASE__/TopologyTreeBuilder.js"></script>
-		<script src="__UPTIME_GADGET_BASE__/topologyTree.js"></script>
+		<script src="__UPTIME_GADGET_BASE__/chosen/chosen.jquery.js?v=<%= pkg.gadget_version %>"></script>
+		<script src="__UPTIME_GADGET_BASE__/TopologyTreeSourceCreator.js?v=<%= pkg.gadget_version %>"></script>
+		<script src="__UPTIME_GADGET_BASE__/TopologyTreeBuilder.js?v=<%= pkg.gadget_version %>"></script>
+		<script src="__UPTIME_GADGET_BASE__/topologyTree.js?v=<%= pkg.gadget_version %>"></script>
 	</head>
 	<body>
 		<div id="treeControls">
