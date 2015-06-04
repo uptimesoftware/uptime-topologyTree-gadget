@@ -1,6 +1,6 @@
 {
 	"name": "uptime.TopologyTree",
-	"version": "1.0.0",
+	"version": "1.1.0-SNAPSHOT",
 	"description": "Easily view the health of your infrastructure's core topology using this interactive topology gadget. View the entire topology or pick and choose which segments to focus on.",
 	"main": "src/topologyTree.js",
 	"repository": {
