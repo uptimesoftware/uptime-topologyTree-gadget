@@ -43,7 +43,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 		if (elements.length > 1) {
 			buildTree();
 		} else {
-			options.errorHandler("No topological dependencies defined in up.time.");
+			options.errorHandler("No topological dependencies defined in Uptime.");
 		}
 	}
 
@@ -90,7 +90,7 @@ TopologyTreeSourceCreator = function(userOptions) {
 	function createRootPlaceholder() {
 		var root = {};
 		root.elementId = 0;
-		root.elementName = "up.time";
+		root.elementName = "Uptime";
 		root.elementStatus = "";
 		root.statusMessage = "";
 		root.monitorStatus = [];
