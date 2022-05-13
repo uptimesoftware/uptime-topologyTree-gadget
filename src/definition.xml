@@ -4,7 +4,7 @@
 		description="Easily view the health of your infrastructure's core topology using this interactive topology gadget. View the entire topology or pick and choose which segments to focus on."
 		thumbnail="thumbs.png" />
 	<gadget_version>
-		<%= pkg.gadget_version %>
+		1.3
 	</gadget_version>
 	<grid_info>
 		<supported_versions>
